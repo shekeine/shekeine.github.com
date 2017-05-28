@@ -1,0 +1,678 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Home</title>
+    
+    <meta name="author" content="John Shekeine">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Load js done in default.html--> 
+    <script src="/assets/jquery-2.1.1.js"></script>
+	<script src="/assets/themes/bootstrap-3/bootstrap/js/bootstrap.js"></script>
+	
+	<!-- Enforce secure: https-->
+	<script src="/assets/https_redirect.js"></script>
+
+    <!-- Bootstrap styles -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap.css" rel="stylesheet">
+    
+    <!--Magnific-popup-->
+    <script src="/assets/themes/magnific-popup/magnific-popup.js"></script>
+
+    <link href="/assets/themes/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css">
+   
+    <!--Custom scroll bar-->
+    <script src="/assets/themes/jScrollPane/script/jquery.jscrollpane.min.js"></script>
+    <script src="/assets/themes/jScrollPane/script/jquery.mousewheel.js"></script>
+    <link href="/assets/themes/jScrollPane/script/jquery.jscrollpane.css" rel="stylesheet" type="text/css"> 
+    
+	<!-- Custom styles: Last to override any higher style -->
+    <link href="/assets/themes/custom/custom.css" rel="stylesheet" type="text/css" media="all">
+    
+    <!-- Syntax highlight style -->
+    <link href="/assets/themes/custom/syntax.css" rel="stylesheet" type="text/css">
+    <link href="/assets/themes/custom/custom_syntax.css" rel="stylesheet" type="text/css">
+
+
+    <!-- atom & rss feed -->
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+    
+    <script type="text/javascript">
+
+    function getSearchJSON()
+    {
+        $.getJSON("/search.json", function(e) {
+            console.log("[search.json loaded for instant search]");
+
+            $("#search_results").html("");
+
+            searchJSON = e;
+        });
+    }
+
+    function doSearch(e)
+    {
+        results = [];
+
+        if (e != "")
+        {
+            $.each(searchJSON, function(t, n) {
+                var r = n.title, i = n.title.toLowerCase(), s = n.href, o = n.date;
+                i.indexOf(e)!==-1 && results.push([r, s, o])
+            });
+
+            printResults();
+        }
+        else
+        {
+            $("#search_results").html();
+            results = [];
+            printResults();
+        }
+    }
+
+    function printResults()
+    {
+        var e = $("#search_results");
+
+        e.html("");
+
+        e.html(function() {
+            if (results.length == 0)
+            {
+                e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="#">No results found</a></li>');
+            }
+            else
+            {
+                $.each(results, function(t, n) {
+                    e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="' + n[1] + '">' + n[0] + '</a></li>');
+                });
+            }
+        });
+    }
+
+    // Show the dropdown menu as long as there are characters in the text field
+    function checkTextField()
+    {
+        // If the value of id search_input is not empty show id search_results otherwise hide it
+        if ($('#search_input').val() != '')
+        {
+            $('#search_results').show();
+        }
+        else
+        {
+            $('#search_results').hide();
+        }
+    }
+
+    // Hide the dropdown menu if there is a left mouse click outside of it
+    $(document).mouseup(function (e)
+    {
+        var container = $("#search_results");
+
+        // if the target of the click isn't the
+        // container nor a descendant of the container
+        if (!container.is(e.target) && container.has(e.target).length === 0)
+        {
+            container.hide();
+        }
+    });
+
+    $(document).ready(function() {
+        // Create the search index on page load
+        getSearchJSON();
+
+        // Continually update search results as characters are typed
+        $("#search_input").keyup(function() {
+            // Make search inputs are case insensitive
+            var e = $(this).val().toLowerCase();
+
+            // Do the actual search
+            doSearch(e);
+        });
+    });
+
+</script> 
+
+
+  </head>
+
+  <body>
+	  
+<div class="container-fluid">
+     <div class="row-fluid">
+	<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+	  <!-- Brand -->
+	  <div class="navbar-inner" id="topbar">
+	    <div class="container center-block">
+		<a class="weblogo center-block" href="/index.html"> <img class= "weblogo" src="/assets/spatialbit_logo.png"></a>
+	    </div>
+	  </div>
+
+	    <!-- Toggle to get grouped for better mobile display -->
+    <div class="container-navbar">
+	<div class="navbar-header">
+		<button id="collapse-button" type="button" class="navbar-toggle" data-toggle="collapse" data-target="#jb-navbar-collapse">
+		<span class="sr-only">Toggle navigation</span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	    </button>
+	</div>
+	    
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="jb-navbar-collapse">
+	    <ul class="nav navbar-nav navlist">
+			<li><a href="/index.html">Home</a></li>
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/02_categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/04_archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/05_tags">Tags</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+			
+			<!--About me link-->
+			<li><a href="/01_About.html">About me</li>
+			
+			<!--start social  subscription-->
+			
+			<div class="soc-cont-header">
+				
+				<!--RSS link-->
+				<li><a href="/rss.xml"><img class= "social-button rss" src="/assets/rss_icon.png"></a></li>
+				  
+				<div class="tw-cont">
+					  
+					<li class=><a href="https://twitter.com/spatialbT"><img class= "social-button tw-4lo" src="/assets/themes/socicons_orig/twitter.png"><p class="tw-text">@spatialBt</p></a></li>
+					  
+				</div>
+			</div>
+			
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	   </div>
+	    
+	</div><!-- /navbar-fixed-top -->
+    </div>
+</div>
+
+
+<div id="wrapper" class="container-fluid">
+		
+					<div class="fadeGradient hidden-xs"></div>
+
+					<!-- Add sidebar -->
+					<div class="container-sidebar hidden-xs">
+						<!--Search form here-->
+<form id="search-form" class="navbar-form" role="search">
+	<div id="searchb" class="form-group center-block">
+		<input id="search_input" data-toggle="dropdown" type="text" class="form-control" placeholder="Search" autofocus="autofocus" autocomplete="off" onkeyup="checkTextField();" />
+		<ul id="search_results" class="dropdown-menu" role="menu"></ul>
+	</div>
+</form>
+
+<!--Navlinks for side-bar.html-->
+<div class="tabwrap">
+		<div id="navlinks-sidebar">
+			<h4 id="recentp-head" class="active">Blog</h4>
+		</div>
+
+		<div id="sidebar-content">
+
+			<div  id="recentposts">
+				<ul class="posts">  
+	
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Sep 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/visualization/2014/09/27/sfcc_rgb_in_R"> Colour compositing satellite imagery in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/27/HDF_to_multi-band_geotiff"> HDF-EOS to multi-band GeoTIFF in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">25 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R"> Batch processing MODIS HDF-EOS in R</a></p>
+		</li>
+	  
+	
+</ul>
+
+			</div>
+
+		</div>
+</div>
+
+
+<!--Social share buttons-->
+<div class="social-share center-block">
+	
+<h5>S h a r e</h5> 
+
+	<a id="share-tw" href="https://twitter.com/share?text=Home%20via%20@spatialbT&url=http://localhost:4000/inc_homepage_clone" title="tweet"><img src="/assets/themes/socicons_grey_no-bg/twitter.png" alt=""/></a>
+	<a id="share-fb" href="https://www.facebook.com/sharer/sharer.php?t=Home&url=http://localhost:4000/inc_homepage_clone" title="share on facebook"><img src="/assets/themes/socicons_grey_no-bg/facebook.png" alt="" /></a>
+	<a id="share-ln" href="http://www.linkedin.com/shareArticle?mini=true&url=http://localhost:4000/inc_homepage_clone&title=Home&source=Shekeine" title="on linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+</div>
+
+<!--start footer-->
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div id="footer" class="span12 footer navbar-inverse navbar-fixed-bottom">
+			<p>&copy; 2017 John Shekeine under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+			  powered by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+			  and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+			</p>
+		</div>
+	</div>
+</div>
+<!--end footer-->
+
+
+					</div>
+
+					<!-- Add main page content -->
+					<div class="container-narrow">
+						<div id= "navbar-xs" class="navbar-default hidden-sm hidden-md hidden-lg" role="navigation">
+
+	<div class="cont-navb-xs">
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+			
+		<ul class="navlist-xs">
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li class="active"><a href="/inc_homepage_clone" class="active">Home</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_recent_posts">Recent posts</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_twitter_widget">News</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+
+		</ul>
+
+	</div>
+	    
+</div><!-- /navbar-default -->
+
+						
+<div class="page-header">
+<!--
+  <h1>Home  <small><p><center>Welcome to Spatialbit! <font size="3"> <a href="http://linkd.in/1li6Hvm">  Shekeine's </a> diary on coding and visualizing spatial ideas </font></center></p></small></h1>
+-->
+</div>
+
+<div class="row">
+  <div class="col-xs-12">
+    <h2><meta name="google-site-verification" content="_2VuAfsDvpTQSJGxv2CqKq4z2sr7VI6wE7jVQA17VmI" /><a href=""></a></h2>
+
+<!-- My carousel goes here -->
+<div class="research-hi-mainhead"><h4>SpatialBit gallery</h4></div>
+
+<div id="home-carousel" class="carousel carousel-fit carousel-fade" data-ride="carousel" data-interval="4000">
+		<!-- Indicators -->
+		<ol class="carousel-indicators">
+		<li data-target="#home-carousel" data-slide-to="0" class="active"></li>
+		<li data-target="#home-carousel" data-slide-to="1"></li>
+		<li data-target="#home-carousel" data-slide-to="2"></li>
+		</ol>
+		 
+	<!-- Wrapper for slides -->
+	<div class="carousel-inner">
+		
+		<div class="item active">
+			<img class="img-responsive center-block" src="imgs/01.png" alt="...">
+				<div class="carousel-caption">Natural color composite of Ngong area: UTM 37s (Landsat 8 TM) </div>
+		</div>
+		
+		<div class="item">
+		<img class="img-responsive center-block" src="imgs/02.png" alt="...">
+		<div class="carousel-caption">False color composite of Ngong area: UTM 37s (Landsat 8 TM)</div>
+		</div>
+				
+	</div>
+
+	<!-- Controls -->
+		<a class="left carousel-control" href="#home-carousel" role="button" data-slide="prev">
+			<span class="glyphicon glyphicon-chevron-left"></span></a>
+			
+		<a class="right carousel-control" href="#home-carousel" role="button" data-slide="next">
+			<span class="glyphicon glyphicon-chevron-right"></span></a>
+		
+</div> <!-- Carousel -->
+<br>
+
+<!-- Add research-hi -->
+
+<div class="research-hi">
+	<div class="research-hi-mainheads"><h4>Research highlights</h4></div>
+
+	
+	
+	
+
+		<div class="research-hi-content">
+
+			<div class="content-header"><h6>Ebolavirus: mapping the zoonotic niche</h6></div>
+
+				<a class="image-popup-no-margins" href="/imgs/research-hi/01_rh_ebola_niche.png" title="Ebola virus niche">
+					<img src="/imgs/research-hi/01_rh_ebola_niche.png"  title="Ebola virus niche">
+				</a>
+
+			<p><dropcaps>F</dropcaps>
+<p>ollowing the worst Ebola virus disease outbreak in history, researchers from 
+the University of Oxford have mapped the risk of Ebola virus zoonitic transmissions (from animal 
+vectors to humans) across the African continent (<a href="http://goo.gl/iRlmZl">original article here</a>). The authors model data from the current epidemic 
+(as well as previous ones: 1976-2002) as a response to the <a href="http://goo.gl/q8W95T">following predictors:</a> 
+elevation (<a href="http://goo.gl/s5BBbd">SRTM</a>), vegetation (<a href="http://goo.gl/ziGaZg">MODIS EVI</a>), land surface temperature 
+(<a href="http://goo.gl/WjwUql">MODIS LST</a>), potential evapotranspiration and <a href="http://www.gbif.org/">species distribution data of bat vectors</a>. 
+The resulting models were then used to predict the habitat suitability of Ebola virus vectors across Africa in affected and 
+“at-risk” countries.</p>
+
+<p>Approximately, 22M people live within the predicted Ebola virus niche. Intuitively, the bigger 
+the confluence of this niche with human populations, the higher the risk of zoonitic transmissions. 
+The suitability of the part of this niche that overlaps with human populations (expressed as the probability of an EVD vector 
+(mostly fruit bats) occurring at a given location) is then used to estimate the populations at risk of Ebola outbreaks
+for each country. Most importantly, the suitability of the predicted niche (across space) reflects the relative probability 
+of zoonitic transmissions (see inset image).</p>
+
+<p>Current Ebola transmission risk models address only zoonitic transmissions. The authors reckon that the next challenge 
+will be to incorporate cases of human-human transmissions to further inform the transmission risk models.</p>
+</p>
+			<p class="date-arch">Pigott et al. Mapping the zoonotic niche of Ebola virus disease in Africa. Elife 3 (2014) e04395.</p>
+
+		</div>
+		
+		 
+	
+	 
+	
+	 
+	
+	 
+	
+</div>
+
+<script type="text/javascript">
+	
+$(document).ready(function() {
+
+	$('.image-popup-vertical-fit').magnificPopup({
+		type: 'image',
+		closeOnContentClick: true,
+		mainClass: 'mfp-img-mobile',
+		image: {
+			verticalFit: true,
+		}
+		
+	});
+
+	$('.image-popup-fit-width').magnificPopup({
+		type: 'image',
+		closeOnContentClick: true,
+		image: {
+			verticalFit: false,
+		}
+	});
+
+	$('.image-popup-no-margins').magnificPopup({
+		type: 'image',
+		closeOnContentClick: true,
+		closeBtnInside: false,
+		fixedContentPos: true,
+		mainClass: 'mfp-no-margins mfp-with-zoom', // class to remove default margin from left and right side
+		image: {
+			verticalFit: true,
+		},
+		zoom: {
+			enabled: true,
+			duration: 300 // don't foget to change the duration also in CSS
+		}
+	});
+
+});
+</script>
+
+<script type="text/javascript">
+$('.carousel').carousel({
+  interval: 6000
+});
+</script>
+
+
+  </div>
+</div>
+
+
+					</div>
+		
+		<div id= "sidebar-right" class="hide767">
+
+			<!--Nav tabs for side-bar.html-->
+
+<!--
+<div id="inset">
+	
+	<img id="mypic" src="/imgs/jj.jpg" alt=""/></a>
+
+	<div class="mynet">
+		
+		<a id="stack" href="http://goo.gl/s0Jzdo" title="stackoverflow"><img src="/assets/stack_overflow.png" alt=""/></a>
+		<a id="rg" href="http://goo.gl/9tdlb0" title="ResearchGate"><img src="/assets/rg.png" alt="" /></a>
+		<a id="ln" href="http://goo.gl/579bS5" title="Linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+	</div>
+</div>
+-->
+
+<div  class="research-hi-mainheads"><h4>Geospatial highlights</h4></div>
+  <div class="center-content">
+	      <a class="twitter-timeline"  href="https://twitter.com/spatialbT/timelines/530665712638255104" data-widget-id="530668359738605568">spatialbT</a>
+	    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+  </div>
+</div> 
+
+
+
+			
+		</div>
+</div>
+
+
+<!--Initialize custom scrollbars on main page content + codeblocks-->
+
+	<script>
+		(function($){
+			$(document).ready(function(){
+				
+$(function()
+{
+	$('pre, #recentposts, .right-sidebar, .stream').each(
+		function()
+		{
+			$(this).jScrollPane(
+				{
+					showArrows: $(this).is('.arrow')
+				}
+			);
+			var api = $(this).data('jsp');
+			var throttleTimeout;
+			$(window).bind(
+				'resize',
+				function()
+				{
+					if (!throttleTimeout) {
+						throttleTimeout = setTimeout(
+							function()
+							{
+								api.reinitialise();
+								throttleTimeout = null;
+							},
+							1 //Time (ms) it takes to re-initialise .jscrollpane() on window resize: minimize desired.
+						);
+					}
+				}
+			);
+		}
+	)
+
+});
+
+			});
+		})(jQuery);
+
+
+	</script>
+</body>
+</html>
+

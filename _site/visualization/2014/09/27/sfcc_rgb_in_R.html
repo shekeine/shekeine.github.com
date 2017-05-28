@@ -1,0 +1,775 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Colour compositing satellite imagery in R</title>
+    
+    <meta name="author" content="John Shekeine">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Load js done in default.html--> 
+    <script src="/assets/jquery-2.1.1.js"></script>
+	<script src="/assets/themes/bootstrap-3/bootstrap/js/bootstrap.js"></script>
+	
+	<!-- Enforce secure: https-->
+	<script src="/assets/https_redirect.js"></script>
+
+    <!-- Bootstrap styles -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap.css" rel="stylesheet">
+    
+    <!--Magnific-popup-->
+    <script src="/assets/themes/magnific-popup/magnific-popup.js"></script>
+
+    <link href="/assets/themes/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css">
+   
+    <!--Custom scroll bar-->
+    <script src="/assets/themes/jScrollPane/script/jquery.jscrollpane.min.js"></script>
+    <script src="/assets/themes/jScrollPane/script/jquery.mousewheel.js"></script>
+    <link href="/assets/themes/jScrollPane/script/jquery.jscrollpane.css" rel="stylesheet" type="text/css"> 
+    
+	<!-- Custom styles: Last to override any higher style -->
+    <link href="/assets/themes/custom/custom.css" rel="stylesheet" type="text/css" media="all">
+    
+    <!-- Syntax highlight style -->
+    <link href="/assets/themes/custom/syntax.css" rel="stylesheet" type="text/css">
+    <link href="/assets/themes/custom/custom_syntax.css" rel="stylesheet" type="text/css">
+
+
+    <!-- atom & rss feed -->
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+    
+    <script type="text/javascript">
+
+    function getSearchJSON()
+    {
+        $.getJSON("/search.json", function(e) {
+            console.log("[search.json loaded for instant search]");
+
+            $("#search_results").html("");
+
+            searchJSON = e;
+        });
+    }
+
+    function doSearch(e)
+    {
+        results = [];
+
+        if (e != "")
+        {
+            $.each(searchJSON, function(t, n) {
+                var r = n.title, i = n.title.toLowerCase(), s = n.href, o = n.date;
+                i.indexOf(e)!==-1 && results.push([r, s, o])
+            });
+
+            printResults();
+        }
+        else
+        {
+            $("#search_results").html();
+            results = [];
+            printResults();
+        }
+    }
+
+    function printResults()
+    {
+        var e = $("#search_results");
+
+        e.html("");
+
+        e.html(function() {
+            if (results.length == 0)
+            {
+                e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="#">No results found</a></li>');
+            }
+            else
+            {
+                $.each(results, function(t, n) {
+                    e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="' + n[1] + '">' + n[0] + '</a></li>');
+                });
+            }
+        });
+    }
+
+    // Show the dropdown menu as long as there are characters in the text field
+    function checkTextField()
+    {
+        // If the value of id search_input is not empty show id search_results otherwise hide it
+        if ($('#search_input').val() != '')
+        {
+            $('#search_results').show();
+        }
+        else
+        {
+            $('#search_results').hide();
+        }
+    }
+
+    // Hide the dropdown menu if there is a left mouse click outside of it
+    $(document).mouseup(function (e)
+    {
+        var container = $("#search_results");
+
+        // if the target of the click isn't the
+        // container nor a descendant of the container
+        if (!container.is(e.target) && container.has(e.target).length === 0)
+        {
+            container.hide();
+        }
+    });
+
+    $(document).ready(function() {
+        // Create the search index on page load
+        getSearchJSON();
+
+        // Continually update search results as characters are typed
+        $("#search_input").keyup(function() {
+            // Make search inputs are case insensitive
+            var e = $(this).val().toLowerCase();
+
+            // Do the actual search
+            doSearch(e);
+        });
+    });
+
+</script> 
+
+
+  </head>
+
+  <body>
+	  
+<div class="container-fluid">
+     <div class="row-fluid">
+	<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+	  <!-- Brand -->
+	  <div class="navbar-inner" id="topbar">
+	    <div class="container center-block">
+		<a class="weblogo center-block" href="/index.html"> <img class= "weblogo" src="/assets/spatialbit_logo.png"></a>
+	    </div>
+	  </div>
+
+	    <!-- Toggle to get grouped for better mobile display -->
+    <div class="container-navbar">
+	<div class="navbar-header">
+		<button id="collapse-button" type="button" class="navbar-toggle" data-toggle="collapse" data-target="#jb-navbar-collapse">
+		<span class="sr-only">Toggle navigation</span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	    </button>
+	</div>
+	    
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="jb-navbar-collapse">
+	    <ul class="nav navbar-nav navlist">
+			<li><a href="/index.html">Home</a></li>
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/02_categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/04_archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/05_tags">Tags</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+			
+			<!--About me link-->
+			<li><a href="/01_About.html">About me</li>
+			
+			<!--start social  subscription-->
+			
+			<div class="soc-cont-header">
+				
+				<!--RSS link-->
+				<li><a href="/rss.xml"><img class= "social-button rss" src="/assets/rss_icon.png"></a></li>
+				  
+				<div class="tw-cont">
+					  
+					<li class=><a href="https://twitter.com/spatialbT"><img class= "social-button tw-4lo" src="/assets/themes/socicons_orig/twitter.png"><p class="tw-text">@spatialBt</p></a></li>
+					  
+				</div>
+			</div>
+			
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	   </div>
+	    
+	</div><!-- /navbar-fixed-top -->
+    </div>
+</div>
+
+
+<div id="wrapper" class="container-fluid">
+		
+					<div class="fadeGradient hidden-xs"></div>
+
+					<!-- Add sidebar -->
+					<div class="container-sidebar hidden-xs">
+						<!--Search form here-->
+<form id="search-form" class="navbar-form" role="search">
+	<div id="searchb" class="form-group center-block">
+		<input id="search_input" data-toggle="dropdown" type="text" class="form-control" placeholder="Search" autofocus="autofocus" autocomplete="off" onkeyup="checkTextField();" />
+		<ul id="search_results" class="dropdown-menu" role="menu"></ul>
+	</div>
+</form>
+
+<!--Navlinks for side-bar.html-->
+<div class="tabwrap">
+		<div id="navlinks-sidebar">
+			<h4 id="recentp-head" class="active">Blog</h4>
+		</div>
+
+		<div id="sidebar-content">
+
+			<div  id="recentposts">
+				<ul class="posts">  
+	
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Sep 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/visualization/2014/09/27/sfcc_rgb_in_R"> Colour compositing satellite imagery in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/27/HDF_to_multi-band_geotiff"> HDF-EOS to multi-band GeoTIFF in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">25 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R"> Batch processing MODIS HDF-EOS in R</a></p>
+		</li>
+	  
+	
+</ul>
+
+			</div>
+
+		</div>
+</div>
+
+
+<!--Social share buttons-->
+<div class="social-share center-block">
+	
+<h5>S h a r e</h5> 
+
+	<a id="share-tw" href="https://twitter.com/share?text=Colour compositing satellite imagery in R%20via%20@spatialbT&url=http://localhost:4000/visualization/2014/09/27/sfcc_rgb_in_R" title="tweet"><img src="/assets/themes/socicons_grey_no-bg/twitter.png" alt=""/></a>
+	<a id="share-fb" href="https://www.facebook.com/sharer/sharer.php?t=Colour compositing satellite imagery in R&url=http://localhost:4000/visualization/2014/09/27/sfcc_rgb_in_R" title="share on facebook"><img src="/assets/themes/socicons_grey_no-bg/facebook.png" alt="" /></a>
+	<a id="share-ln" href="http://www.linkedin.com/shareArticle?mini=true&url=http://localhost:4000/visualization/2014/09/27/sfcc_rgb_in_R&title=Colour compositing satellite imagery in R&source=Shekeine" title="on linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+</div>
+
+<!--start footer-->
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div id="footer" class="span12 footer navbar-inverse navbar-fixed-bottom">
+			<p>&copy; 2017 John Shekeine under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+			  powered by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+			  and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+			</p>
+		</div>
+	</div>
+</div>
+<!--end footer-->
+
+
+					</div>
+
+					<!-- Add main page content -->
+					<div class="container-narrow">
+						<div id= "navbar-xs" class="navbar-default hidden-sm hidden-md hidden-lg" role="navigation">
+
+	<div class="cont-navb-xs">
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+			
+		<ul class="navlist-xs">
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_homepage_clone">Home</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_recent_posts">Recent posts</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_twitter_widget">News</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+
+		</ul>
+
+	</div>
+	    
+</div><!-- /navbar-default -->
+
+						
+<div class="page-header">
+  <h1>Colour compositing satellite imagery in R <small><a href="http://bit.ly/1ltTpMg"><font size="2">Full R code on github</font></a></small></h1>
+  	
+	  <ul class="tag_box inline">
+	    <li><i class="glyphicon glyphicon-tags"></i></li>
+	    
+	    
+
+
+  
+     
+    	<li><a href="/05_tags.html#Landsat-ref">Landsat <span>1</span></a></li>
+     
+    	<li><a href="/05_tags.html#ggplot2-ref">ggplot2 <span>1</span></a></li>
+     
+    	<li><a href="/05_tags.html#image compositing-ref">image compositing <span>1</span></a></li>
+    
+  
+
+
+
+	  </ul>
+	 
+</div>
+
+<div class="row post-full">
+  <div class="col-xs-12">
+    <div class="date">
+      <span>27 September 2014</span>
+      
+    </div>
+    <div class="content">
+      <h4 id="introduction">Introduction</h4>
+
+<hr />
+
+<p>The general goal of this post is to illustrate how to:</p>
+
+<ul>
+  <li>
+    <p>Transform rasters to R friendly data structures e.g. a dataframe, while maintaining
+a coherent organization of the spectral and geolocational information.</p>
+  </li>
+  <li>
+    <p>Plot natural colour images (RGB) with the awesome R library: <code>ggplot2</code></p>
+  </li>
+  <li>
+    <p>Generate pretty false colour composites in R, and illustrate their usefulness in remote sensing.</p>
+  </li>
+</ul>
+
+<hr />
+
+<p>####Tools and tutorial data</p>
+
+<hr />
+
+<p>We’ll be using a Landsat 8 TM scene from 03/Feb/2014 of the Ngong hills region, Kenya. 
+This and other Landsat data can be freely obtained from the USGS repositories using 
+the <a href="http://earthexplorer.usgs.gov/">Earth Explorer</a> data discovery tool.</p>
+
+<p>For Landsat, I prefer to get the data via Earth Explorer rather than <a href="http://1.usa.gov/ZLZOsr">Reverb echo</a> 
+because the former allows the user to filter available imagery by cloud cover, 
+which in turn means there is no need to get a bus load of images then sift through 
+to find the best one: <a href="http://earthexplorer.usgs.gov/">Earth Explorer</a> can do that 
+for you on the fly during the data discovery process. The exact scene ID of the 
+image used here is: <code>LC81680612014034LGN00</code>.</p>
+
+<p>The data comes as a collection of GeoTIF files: one for each of Landsat 8’s 
+eleven bands; plus a quality band. To keep things neat, we move the files we need 
+(GeoTiffs for <code>Bands 1-7</code> into a new empty folder). We then read all these rasters 
+into an R object of type “raster stack” as shown below. The newly created stack, 
+<code>raw_lt</code>, is essentially a multi-band raster (with 7 bands) as <code>nlayers()</code> reports.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="c1">#Mosaic raw landsat tifs</span>
+<span class="lineno">2 </span>raw_lt <span class="o">&lt;-</span> stack<span class="p">(</span><span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span><span class="s">&quot;~/Grass/ngong_hills/landsat/LC81680612014034LGN00/&quot;</span><span class="p">,</span> pattern<span class="o">=</span><span class="s">&quot;TIF&quot;</span><span class="p">,</span> full.names<span class="o">=</span><span class="bp">T</span><span class="p">))</span>
+<span class="lineno">3 </span>nlayers<span class="p">(</span>raw_lt<span class="p">)</span></code></pre></figure>
+
+<p>Thereafter, we can reduce the image’s extent to our region of interest (ROI). To 
+do that, we first define an extent object to be used to crop it. The <code>coords</code> argument 
+here defines the lower left and upper right corner of the new (cropped image).</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="c1">#Crop and mask to ROI</span>
+<span class="lineno">2 </span>ext_lt <span class="o">&lt;-</span> SpatialPointsDataFrame<span class="p">(</span>coords<span class="o">=</span><span class="kp">cbind</span><span class="p">(</span>x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">36.5948</span><span class="p">,</span><span class="m">36.7500</span><span class="p">),</span> y<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">-1.4761</span><span class="p">,</span><span class="m">-1.3368</span><span class="p">)),</span>
+<span class="lineno">3 </span>              data<span class="o">=</span><span class="kt">data.frame</span><span class="p">(</span>id<span class="o">=</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">),</span> proj4string<span class="o">=</span>CRS<span class="p">(</span><span class="s">&quot;+init=epsg:4326&quot;</span><span class="p">))</span></code></pre></figure>
+
+<p>Note that the coordinates supplied above are in the WGS84 coordinate system (CRS), 
+unlike the Landsat image to be cropped. We’ll tranform the CRS of the extent object 
+to match that of the image and then crop it:</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>ext_lt <span class="o">&lt;-</span> spTransform<span class="p">(</span>ext_lt<span class="p">,</span> CRS<span class="o">=</span>crs<span class="p">(</span>raw_lt<span class="p">))</span>
+<span class="lineno">2 </span>ngn <span class="o">&lt;-</span> crop<span class="p">(</span>x<span class="o">=</span>raw_lt<span class="p">,</span> extent<span class="p">(</span>ext_lt<span class="p">))</span>
+<span class="lineno">3 </span>
+<span class="lineno">4 </span><span class="c1">#For archival and easy read access into R, write the new image to disk:</span>
+<span class="lineno">5 </span>
+<span class="lineno">6 </span>writeRaster<span class="p">(</span>x<span class="o">=</span>ngn<span class="p">,</span> filename<span class="o">=</span><span class="s">&quot;03_SFCC_RGB/mb_ras.tif&quot;</span><span class="p">,</span> format<span class="o">=</span><span class="s">&quot;GTiff&quot;</span><span class="p">,</span> overwrite<span class="o">=</span><span class="bp">T</span><span class="p">)</span></code></pre></figure>
+
+<hr />
+
+<p>####Natural colour (RGB) composite</p>
+
+<hr />
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="c1">#Read in multi-band raster</span>
+<span class="lineno"> 2 </span>mb_ras <span class="o">&lt;-</span> stack<span class="p">(</span><span class="s">&quot;03_SFCC_RGB/mb_ras.tif&quot;</span><span class="p">)</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span><span class="c1">#Scale to 0-255 range for display device</span>
+<span class="lineno"> 5 </span>mb_ras <span class="o">&lt;-</span> stretch<span class="p">(</span>x<span class="o">=</span>mb_ras<span class="p">,</span> minv<span class="o">=</span><span class="m">0</span><span class="p">,</span> maxv<span class="o">=</span><span class="m">255</span><span class="p">)</span>
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span><span class="c1">#Coerce raster into dataframe with coordinate columns for each pixel centre: for ggplot2</span>
+<span class="lineno"> 8 </span>mb_df <span class="o">&lt;-</span> raster<span class="o">::</span><span class="kp">as.data.frame</span><span class="p">(</span>mb_ras<span class="p">,</span> xy<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno"> 9 </span>
+<span class="lineno">10 </span>mb_df <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>x<span class="o">=</span>mb_df<span class="o">$</span>x<span class="p">,</span> y<span class="o">=</span>mb_df<span class="o">$</span>y<span class="p">,</span> r<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.4<span class="p">,</span> n<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.5<span class="p">,</span> g<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.3<span class="p">,</span> b<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.2<span class="p">)</span></code></pre></figure>
+
+<p>To plot a per-pixel RGB composite of the image, we’ll use R’s rgb() function. The 
+function ingests user defined intensities in the respective bands and composites 
+these to an output colour in the  sRGB colorspace. Note that all 3 (R, G, and B) 
+band intensities must be defined. Pixels with NA’s in one or more bands will cause rgb() to fail. 
+We can check whether we have any missing data by running:</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>mb_df<span class="p">[</span><span class="o">!</span>complete.cases<span class="p">(</span>mb_df<span class="p">),]</span> <span class="c1">#Returns zero rows, no pixel is lacking any data</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"><span></span>## [1] x y r n g b
+## &lt;0 rows&gt; (or 0-length row.names)</code></pre></figure>
+
+<p>In case you are working with a product that has data gaps e.g. MODIS MCD43A4, you 
+would have to sieve out all incomplete rows from mb_df i.e., pixels with NA in any 
+of the bands which is doable with only a slight modification of the above code chunk.</p>
+
+<p>Using R’s ggplot2 library, An RGB composite can then be plotted as follows:</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>ggplot<span class="p">(</span>data<span class="o">=</span>mb_df<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>x<span class="p">,</span> y<span class="o">=</span>y<span class="p">,</span> fill<span class="o">=</span>rgb<span class="p">(</span>r<span class="p">,</span>g<span class="p">,</span>b<span class="p">,</span> maxColorValue <span class="o">=</span> <span class="m">255</span><span class="p">)))</span> <span class="o">+</span> 
+<span class="lineno">2 </span>  coord_equal<span class="p">()</span> <span class="o">+</span> theme_bw<span class="p">()</span> <span class="o">+</span> geom_tile<span class="p">()</span> <span class="o">+</span> scale_fill_identity<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno">3 </span>  
+<span class="lineno">4 </span>  scale_x_continuous<span class="p">(</span>breaks<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>x<span class="p">)</span><span class="o">*</span><span class="kt">c</span><span class="p">(</span><span class="m">1.01</span><span class="p">,</span> <span class="m">0.99</span><span class="p">),</span> labels<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>x<span class="p">),</span> expand <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">))</span> <span class="o">+</span>
+<span class="lineno">5 </span>  scale_y_continuous<span class="p">(</span>breaks<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>y<span class="p">)</span><span class="o">*</span><span class="kt">c</span><span class="p">(</span><span class="m">0.99</span><span class="p">,</span> <span class="m">1.01</span><span class="p">),</span> labels<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>y<span class="p">),</span> expand <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">))</span> <span class="o">+</span>
+<span class="lineno">6 </span>  
+<span class="lineno">7 </span>  theme<span class="p">(</span>panel.grid<span class="o">=</span>element_blank<span class="p">(),</span> plot.title <span class="o">=</span> element_text<span class="p">(</span>size <span class="o">=</span> <span class="m">10</span><span class="p">))</span><span class="o">+</span>
+<span class="lineno">8 </span>  
+<span class="lineno">9 </span>  labs<span class="p">(</span><span class="kt">list</span><span class="p">(</span>title<span class="o">=</span><span class="s">&quot;Landsat 8 TM derived RGB composite of Ngong Area, Kenya (UTM zone 37s)&quot;</span><span class="p">,</span> x<span class="o">=</span><span class="s">&quot;Lon&quot;</span><span class="p">,</span> y<span class="o">=</span><span class="s">&quot;Lat&quot;</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-6-1.png" alt="center" /></p>
+
+<hr />
+
+<p>####False colour composite (FCC)</p>
+
+<hr />
+
+<p>FCC’s are used to highlight particular components of the landscape e.g. certain minerals, 
+vegetation or water bodies.</p>
+
+<p>False colour compositing in R is as you might guess, just a matter of modifying 
+how the relevant source image bands are mapped to the RGB channels of the display device.</p>
+
+<p>As an example, we’ll do an RGB to NRG mapping when compositing the same image in 
+Figure 1. This results in the so called standard false colour composite (SFCC) where 
+vegetation features such as forests and other greenery are conspicously  depicted 
+in red, as opposed to green in true RGB compositing.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>ggplot<span class="p">(</span>data<span class="o">=</span>mb_df<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>x<span class="p">,</span> y<span class="o">=</span>y<span class="p">,</span> fill<span class="o">=</span>rgb<span class="p">(</span>n<span class="p">,</span>r<span class="p">,</span>g<span class="p">,</span> maxColorValue <span class="o">=</span> <span class="m">255</span><span class="p">)))</span> <span class="o">+</span> 
+<span class="lineno"> 2 </span>  coord_equal<span class="p">()</span> <span class="o">+</span> theme_bw<span class="p">()</span> <span class="o">+</span> geom_tile<span class="p">()</span> <span class="o">+</span> scale_fill_identity<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno"> 3 </span>  
+<span class="lineno"> 4 </span>  scale_x_continuous<span class="p">(</span>breaks<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>x<span class="p">)</span><span class="o">*</span><span class="kt">c</span><span class="p">(</span><span class="m">1.01</span><span class="p">,</span> <span class="m">0.99</span><span class="p">),</span> labels<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>x<span class="p">),</span> expand <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">))</span> <span class="o">+</span>
+<span class="lineno"> 5 </span>  scale_y_continuous<span class="p">(</span>breaks<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>y<span class="p">)</span><span class="o">*</span><span class="kt">c</span><span class="p">(</span><span class="m">0.99</span><span class="p">,</span> <span class="m">1.01</span><span class="p">),</span> labels<span class="o">=</span><span class="kp">range</span><span class="p">(</span>mb_df<span class="o">$</span>y<span class="p">),</span> expand <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">))</span> <span class="o">+</span>
+<span class="lineno"> 6 </span>  
+<span class="lineno"> 7 </span>  theme<span class="p">(</span>panel.grid<span class="o">=</span>element_blank<span class="p">(),</span> plot.title <span class="o">=</span> element_text<span class="p">(</span>size <span class="o">=</span> <span class="m">10</span><span class="p">))</span><span class="o">+</span>
+<span class="lineno"> 8 </span>  
+<span class="lineno"> 9 </span> labs<span class="p">(</span><span class="kt">list</span><span class="p">(</span>title<span class="o">=</span><span class="s">&quot;Landsat 8 TM derived SFCC of Ngong Area, (UTM 37s)&quot;</span><span class="p">,</span> 
+<span class="lineno">10 </span>           x<span class="o">=</span><span class="s">&quot;Lon&quot;</span><span class="p">,</span> y<span class="o">=</span><span class="s">&quot;Lat&quot;</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-7-1.png" alt="center" /></p>
+
+<p>FCC can be extended further to highlight other landscape components. 
+Vegetation indices and spectral ratios for minerals such as iron oxides 
+may for example be mapped together in an RGB space to highlight the relative 
+distribution of each component within a landscape.</p>
+
+<hr />
+
+<h4 id="references">References</h4>
+
+<ul>
+  <li>Liu, Jian Guo, and Philippa J. Mason. Essential image processing and GIS for remote sensing. John Wiley &amp; Sons, 2013.</li>
+  <li>Wickham, Hadley. ggplot2: elegant graphics for data analysis. Springer, 2016.</li>
+</ul>
+
+<hr />
+
+    </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="glyphicon glyphicon-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/02_categories.html#visualization-ref">
+    		visualization <span>1</span>
+    	</a></li>
+    
+  
+
+
+    </ul>
+    
+
+   <hr>
+    <ul class="pagination">
+    
+      <li class="prev"><a href="/modis/2014/08/27/HDF_to_multi-band_geotiff" title="HDF-EOS to multi-band GeoTIFF in R">&laquo; Previous</a></li>
+    
+      <li><a href="/04_archive.html">Archive</a></li>
+    
+      <li class="next"><a href="/2014/11/12/ebola_niche" title="Ebolavirus: mapping the zoonotic niche">Next &raquo;</a></li>
+    
+    </ul>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'shekeine'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+</div>
+
+					</div>
+		
+		<div id= "sidebar-right" class="hide767">
+
+			<!--Nav tabs for side-bar.html-->
+
+<!--
+<div id="inset">
+	
+	<img id="mypic" src="/imgs/jj.jpg" alt=""/></a>
+
+	<div class="mynet">
+		
+		<a id="stack" href="http://goo.gl/s0Jzdo" title="stackoverflow"><img src="/assets/stack_overflow.png" alt=""/></a>
+		<a id="rg" href="http://goo.gl/9tdlb0" title="ResearchGate"><img src="/assets/rg.png" alt="" /></a>
+		<a id="ln" href="http://goo.gl/579bS5" title="Linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+	</div>
+</div>
+-->
+
+<div  class="research-hi-mainheads"><h4>Geospatial highlights</h4></div>
+  <div class="center-content">
+	      <a class="twitter-timeline"  href="https://twitter.com/spatialbT/timelines/530665712638255104" data-widget-id="530668359738605568">spatialbT</a>
+	    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+  </div>
+</div> 
+
+
+
+			
+		</div>
+</div>
+
+
+<!--Initialize custom scrollbars on main page content + codeblocks-->
+
+	<script>
+		(function($){
+			$(document).ready(function(){
+				
+$(function()
+{
+	$('pre, #recentposts, .right-sidebar, .stream').each(
+		function()
+		{
+			$(this).jScrollPane(
+				{
+					showArrows: $(this).is('.arrow')
+				}
+			);
+			var api = $(this).data('jsp');
+			var throttleTimeout;
+			$(window).bind(
+				'resize',
+				function()
+				{
+					if (!throttleTimeout) {
+						throttleTimeout = setTimeout(
+							function()
+							{
+								api.reinitialise();
+								throttleTimeout = null;
+							},
+							1 //Time (ms) it takes to re-initialise .jscrollpane() on window resize: minimize desired.
+						);
+					}
+				}
+			);
+		}
+	)
+
+});
+
+			});
+		})(jQuery);
+
+
+	</script>
+</body>
+</html>
+

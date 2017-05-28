@@ -1,0 +1,138 @@
+<h4 id="introduction">Introduction</h4>
+
+<hr />
+
+<p>The general goal of this post is to illustrate how to:</p>
+
+<ul>
+  <li>
+    <p>Transform rasters to R friendly data structures e.g. a dataframe, while maintaining
+a coherent organization of the spectral and geolocational information.</p>
+  </li>
+  <li>
+    <p>Plot natural colour images (RGB) with the awesome R library: <code>ggplot2</code></p>
+  </li>
+  <li>
+    <p>Generate pretty false colour composites in R, and illustrate their usefulness in remote sensing.</p>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="tools-and-tutorial-data">Tools and tutorial data</h4>
+
+<hr />
+
+<p>We’ll be using a Landsat 8 TM scene from 03/Feb/2014 of the Ngong hills region, Kenya. 
+This and other Landsat data can be freely obtained from the USGS repositories using 
+the <a href="http://earthexplorer.usgs.gov/">Earth Explorer</a> data discovery tool. </p>
+
+<p>For Landsat, I prefer to get the data via Earth Explorer rather than <a href="http://1.usa.gov/ZLZOsr">Reverb echo</a> 
+because the former allows the user to filter available imagery by cloud cover, 
+which in turn means there is no need to get a bus load of images then sift through 
+to find the best one: <a href="http://earthexplorer.usgs.gov/">Earth Explorer</a> can do that 
+for you on the fly during the data discovery process. The exact scene ID of the 
+image used here is: <code>LC81680612014034LGN00</code>. </p>
+
+<p>The data comes as a collection of GeoTIF files: one for each of Landsat 8’s 
+eleven bands; plus a quality band. To keep things neat, we move the files we need 
+(GeoTiffs for <code>Bands 1-7</code> into a new empty folder). We then read all these rasters 
+into an R object of type “raster stack” as shown below. The newly created stack, 
+<code>raw_lt</code>, is essentially a multi-band raster (with 7 bands) as <code>nlayers()</code> reports.</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> <span class="c1">#Mosaic raw landsat tifs</span>
+<span class="lineno">2</span> raw_lt <span class="o">&lt;-</span> stack<span class="p">(</span><span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span><span class="s">&quot;~/Grass/ngong_hills/landsat/LC81680612014034LGN00/&quot;</span><span class="p">,</span> pattern<span class="o">=</span><span class="s">&quot;TIF&quot;</span><span class="p">,</span> full.names<span class="o">=</span><span class="bp">T</span><span class="p">))</span>
+<span class="lineno">3</span> nlayers<span class="p">(</span>raw_lt<span class="p">)</span></code></pre></div>
+
+<p>Thereafter, we can reduce the image’s extent to our region of interest (ROI). To 
+do that, we first define an extent object to be used to crop it. The <code>coords</code> argument 
+here defines the lower left and upper right corner of the new (cropped image).  </p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> <span class="c1">#Crop and mask to ROI</span>
+<span class="lineno">2</span> ext_lt <span class="o">&lt;-</span> SpatialPointsDataFrame<span class="p">(</span>coords<span class="o">=</span><span class="kp">cbind</span><span class="p">(</span>x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">36.5948</span><span class="p">,</span><span class="m">36.7500</span><span class="p">),</span> y<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">-1.4761</span><span class="p">,</span><span class="m">-1.3368</span><span class="p">)),</span>
+<span class="lineno">3</span>               data<span class="o">=</span><span class="kt">data.frame</span><span class="p">(</span>id<span class="o">=</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">),</span> proj4string<span class="o">=</span>CRS<span class="p">(</span><span class="s">&quot;+init=epsg:4326&quot;</span><span class="p">))</span></code></pre></div>
+
+<p>Note that the coordinates supplied above are in the WGS84 coordinate system (CRS), 
+unlike the Landsat image to be cropped. We’ll tranform the CRS of the extent object 
+to match that of the image and then crop it:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> ext_lt <span class="o">&lt;-</span> spTransform<span class="p">(</span>ext_lt<span class="p">,</span> CRS<span class="o">=</span>crs<span class="p">(</span>raw_lt<span class="p">))</span>
+<span class="lineno">2</span> ngn <span class="o">&lt;-</span> crop<span class="p">(</span>x<span class="o">=</span>raw_lt<span class="p">,</span> extent<span class="p">(</span>ext_lt<span class="p">))</span></code></pre></div>
+
+<p>Finally, for neat archival and easy read access into R, we can write the new image to disk with:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> writeRaster<span class="p">(</span>x<span class="o">=</span>ngn<span class="p">,</span> filename<span class="o">=</span><span class="s">&quot;03_SFCC_RGB/mb_ras.tif&quot;</span><span class="p">,</span> format<span class="o">=</span><span class="s">&quot;GTiff&quot;</span><span class="p">,</span> overwrite<span class="o">=</span><span class="bp">T</span><span class="p">)</span></code></pre></div>
+
+<hr />
+
+<h4 id="natural-colour-rgb-composite">Natural colour (RGB) composite</h4>
+
+<hr />
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> mb_ras <span class="o">&lt;-</span> stack<span class="p">(</span><span class="s">&quot;03_SFCC_RGB/mb_ras.tif&quot;</span><span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> <span class="c1">#Scale to 0-255 range for display device</span>
+<span class="lineno">2</span> mb_ras <span class="o">&lt;-</span> stretch<span class="p">(</span>x<span class="o">=</span>mb_ras<span class="p">,</span> minv<span class="o">=</span><span class="m">0</span><span class="p">,</span> maxv<span class="o">=</span><span class="m">255</span><span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> <span class="c1">#Coerce raster into dataframe with coordinate columns for each pixel centre: for ggplot2</span>
+<span class="lineno">2</span> mb_df <span class="o">&lt;-</span> raster<span class="o">::</span><span class="kp">as.data.frame</span><span class="p">(</span>mb_ras<span class="p">,</span> xy<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno">3</span>   mb_df <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>x<span class="o">=</span>mb_df<span class="o">$</span>x<span class="p">,</span> y<span class="o">=</span>mb_df<span class="o">$</span>y<span class="p">,</span> r<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.4<span class="p">,</span> n<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.5<span class="p">,</span> g<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.3<span class="p">,</span> b<span class="o">=</span>mb_df<span class="o">$</span>mb_ras.2<span class="p">)</span></code></pre></div>
+
+<p>To plot a per-pixel RGB composite of the image, we’ll use R’s rgb() function. The 
+function ingests user defined intensities in the respective bands and composites 
+these to an output colour in the  sRGB colorspace. Note that all 3 (R, G, and B) 
+band intensities must be defined. Pixels with NA’s in one or more bands will cause rgb() to fail. 
+We can check whether we have any missing data by running:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> mb_df<span class="p">[</span><span class="o">!</span>complete.cases<span class="p">(</span>mb_df<span class="p">),]</span> <span class="c1">#Returns zero rows, no pixel is lacking any data</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">## [1] x y r n g b
+## &lt;0 rows&gt; (or 0-length row.names)</code></pre></div>
+
+<p>In case you are working with a product that has data gaps e.g. MODIS MCD43A4, you 
+would have to sieve out all incomplete rows from mb_df i.e., pixels with NA in any 
+of the bands which is doable with only a slight modification of the above code chunk.</p>
+
+<p>Using R’s ggplot2 library, An RGB composite can then be plotted as follows:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> ggplot<span class="p">(</span>data<span class="o">=</span>mb_df<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>x<span class="p">,</span> y<span class="o">=</span>y<span class="p">,</span> fill<span class="o">=</span>rgb<span class="p">(</span>r<span class="p">,</span>g<span class="p">,</span>b<span class="p">,</span> maxColorValue <span class="o">=</span> <span class="m">255</span><span class="p">)))</span> <span class="o">+</span> 
+<span class="lineno">2</span>   coord_equal<span class="p">()</span> <span class="o">+</span> theme_bw<span class="p">()</span> <span class="o">+</span> geom_tile<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno">3</span>     scale_fill_identity<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno">4</span>       theme<span class="p">(</span>panel.grid<span class="o">=</span>element_blank<span class="p">())</span><span class="o">+</span>
+<span class="lineno">5</span>   labs<span class="p">(</span><span class="kt">list</span><span class="p">(</span>title<span class="o">=</span><span class="s">&quot;Landsat 8 TM derived RGB composite of Ngong Area, Kenya&quot;</span><span class="p">,</span> x<span class="o">=</span><span class="s">&quot;Longitude&quot;</span><span class="p">,</span> y<span class="o">=</span><span class="s">&quot;Latitude&quot;</span><span class="p">))</span></code></pre></div>
+
+<p><img src="/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-9.png" alt="center" /> </p>
+
+<hr />
+
+<h4 id="false-colour-composite-fcc">False colour composite (FCC)</h4>
+
+<hr />
+
+<p>FCC’s are used to highlight particular components of the landscape e.g. certain minerals, 
+vegetation or water bodies. </p>
+
+<p>False colour compositing in R is as you might guess, just a matter of modifying 
+how the relevant source image bands are mapped to the RGB channels of the display device.</p>
+
+<p>As an example, we’ll do an RGB to NRG mapping when compositing the same image in 
+Figure 1. This results in the so called standard false colour composite (SFCC) where 
+vegetation features such as forests and other greenery are conspicously  depicted 
+in red, as opposed to green in true RGB compositing.</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> ggplot<span class="p">(</span>data<span class="o">=</span>mb_df<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>x<span class="p">,</span> y<span class="o">=</span>y<span class="p">,</span> fill<span class="o">=</span>rgb<span class="p">(</span>n<span class="p">,</span>r<span class="p">,</span>g<span class="p">,</span> maxColorValue <span class="o">=</span> <span class="m">255</span><span class="p">)))</span> <span class="o">+</span> 
+<span class="lineno">2</span>   coord_equal<span class="p">()</span> <span class="o">+</span> theme_bw<span class="p">()</span> <span class="o">+</span> geom_tile<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno">3</span>     scale_fill_identity<span class="p">()</span> <span class="o">+</span> 
+<span class="lineno">4</span>       theme<span class="p">(</span>panel.grid<span class="o">=</span>element_blank<span class="p">())</span><span class="o">+</span>
+<span class="lineno">5</span>   labs<span class="p">(</span><span class="kt">list</span><span class="p">(</span>title<span class="o">=</span><span class="s">&quot;Landsat 8 TM derived SFCC of Ngong Area, Kenya&quot;</span><span class="p">,</span> x<span class="o">=</span><span class="s">&quot;Longitude&quot;</span><span class="p">,</span> y<span class="o">=</span><span class="s">&quot;Latitude&quot;</span><span class="p">))</span></code></pre></div>
+
+<p><img src="/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-10.png" alt="center" /> </p>
+
+<p>FCC can be extended further to highlight other landscape components. For example, 
+soils or rocks rich in iron oxide can be highlighted with an </p>
+
+<hr />
+
+<h4 id="references">References</h4>
+
+<hr />

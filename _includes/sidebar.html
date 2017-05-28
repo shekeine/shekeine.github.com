@@ -1,0 +1,48 @@
+<!--Search form here-->
+<form id="search-form" class="navbar-form" role="search">
+	<div id="searchb" class="form-group center-block">
+		<input id="search_input" data-toggle="dropdown" type="text" class="form-control" placeholder="Search" autofocus="autofocus" autocomplete="off" onkeyup="checkTextField();" />
+		<ul id="search_results" class="dropdown-menu" role="menu"></ul>
+	</div>
+</form>
+
+<!--Navlinks for side-bar.html-->
+<div class="tabwrap">
+		<div id="navlinks-sidebar">
+			<h4 id="recentp-head" class="active">Blog</h4>
+		</div>
+
+		<div id="sidebar-content">
+
+			<div  id="recentposts">
+				{% include recent_posts.html %}
+			</div>
+
+		</div>
+</div>
+
+
+<!--Social share buttons-->
+<div class="social-share center-block">
+	
+<h5>S h a r e</h5> 
+
+	<a id="share-tw" href="https://twitter.com/share?text={{ page.title }}%20via%20@{{ site.author.twitter }}&url={{ site.url }}{{ page.url }}" title="tweet"><img src="/assets/themes/socicons_grey_no-bg/twitter.png" alt=""/></a>
+	<a id="share-fb" href="https://www.facebook.com/sharer/sharer.php?t={{ page.title }}&url={{ site.url }}{{ page.url }}" title="share on facebook"><img src="/assets/themes/socicons_grey_no-bg/facebook.png" alt="" /></a>
+	<a id="share-ln" href="http://www.linkedin.com/shareArticle?mini=true&url={{ site.url }}{{ page.url }}&title={{ page.title }}&source=Shekeine" title="on linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+</div>
+
+<!--start footer-->
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div id="footer" class="span12 footer navbar-inverse navbar-fixed-bottom">
+			<p>&copy; {{ site.time | date: '%Y' }} {{ site.author.name }} under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+			  powered by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+			  and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+			</p>
+		</div>
+	</div>
+</div>
+<!--end footer-->
+

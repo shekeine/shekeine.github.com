@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>{{ page.title }}</title>
+    {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+    <meta name="author" content="{{ site.author.name }}">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+     <!-- Load js done in default.html--> 
+    <script src="assets/jquery-1.11.1.min.js"></script>
+    <script src="assets/themes/bootstrap-3/bootstrap/js/bootstrap.min.js"></script>   
+          
+    <!-- Bootstrap styles -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap.css" rel="stylesheet">
+    
+	<!-- Sticky Footer -->
+    <link href="{{ ASSET_PATH }}/bootstrap/css/bs-sticky-footer.css" rel="stylesheet">
+    
+    <!-- Custom styles -->
+
+    <link href="/assets/themes/custom/custom.css" rel="stylesheet" type="text/css" media="all">
+    
+    <!-- Syntax highlight style -->
+    <link href="/assets/themes/custom/syntax.css" rel="stylesheet" type="text/css">
+    
+    <!-- atom & rss feed -->
+    <link href="{{ BASE_PATH }}{{ site.JB.atom_path }}" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="{{ BASE_PATH }}{{ site.JB.rss_path }}" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+  
+<div class="container-fluid">
+     <div class="row-fluid">
+	<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+	  <!-- Brand -->
+	  <div class="navbar-inner" id="topbar">
+	    <div class="container center-block">
+		<a class="weblogo center-block" href="/index.html"> <img class= "weblogo" src="/assets/spatialbit_logo.png"></a>
+	    </div>
+	  </div>
+
+	    <!-- Toggle to get grouped for better mobile display -->
+      <div class="container-navbar">
+	<div class="navbar-header">
+	      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#jb-navbar-collapse">
+		<span class="sr-only">Toggle navigation</span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	      </button>
+	</div>
+	    
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="jb-navbar-collapse">
+	      <ul class="nav navbar-nav navlist">
+		<li><a href="/index.html">Home</a></li>
+		{% assign pages_list = site.pages %}
+		{% assign group = 'navigation' %}
+		{% include JB/pages_list %}
+		
+		<!--start social  subscription-->
+		
+		<div class="soc-cont-header">
+		  <li><a href="/rss.xml"><img class= "social-button rss" src="/assets/rss_icon.png"></a></li>
+		  
+		      <div class="tw-cont">
+		      
+		      <li class=><a href="/rss.xml"><img class= "social-button tw-4lo" src="/assets/themes/socicons_blue/twitter.png"><p class="tw-text">@spatialBt</p></a></li>
+		      
+		      </div>
+		</div>
+		
+		<!--End social subscription-->
+		
+		
+		
+<!--		<form class="navbar-form navbar-right" role="search">
+		    <div id="searchb" class="form-group">
+		      <input type="text" class="form-control" placeholder="Search">
+		    </div>
+		  </form>-->
+		  
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	   </div>
+	    
+	</div><!-- /navbar-fixed-top -->
+    </div>
+</div>

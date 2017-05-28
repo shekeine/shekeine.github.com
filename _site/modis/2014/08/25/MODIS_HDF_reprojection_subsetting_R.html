@@ -1,0 +1,854 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Batch processing MODIS HDF-EOS in R</title>
+    
+    <meta name="author" content="John Shekeine">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Load js done in default.html--> 
+    <script src="/assets/jquery-2.1.1.js"></script>
+	<script src="/assets/themes/bootstrap-3/bootstrap/js/bootstrap.js"></script>
+	
+	<!-- Enforce secure: https-->
+	<script src="/assets/https_redirect.js"></script>
+
+    <!-- Bootstrap styles -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap.css" rel="stylesheet">
+    
+    <!--Magnific-popup-->
+    <script src="/assets/themes/magnific-popup/magnific-popup.js"></script>
+
+    <link href="/assets/themes/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css">
+   
+    <!--Custom scroll bar-->
+    <script src="/assets/themes/jScrollPane/script/jquery.jscrollpane.min.js"></script>
+    <script src="/assets/themes/jScrollPane/script/jquery.mousewheel.js"></script>
+    <link href="/assets/themes/jScrollPane/script/jquery.jscrollpane.css" rel="stylesheet" type="text/css"> 
+    
+	<!-- Custom styles: Last to override any higher style -->
+    <link href="/assets/themes/custom/custom.css" rel="stylesheet" type="text/css" media="all">
+    
+    <!-- Syntax highlight style -->
+    <link href="/assets/themes/custom/syntax.css" rel="stylesheet" type="text/css">
+    <link href="/assets/themes/custom/custom_syntax.css" rel="stylesheet" type="text/css">
+
+
+    <!-- atom & rss feed -->
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+    
+    <script type="text/javascript">
+
+    function getSearchJSON()
+    {
+        $.getJSON("/search.json", function(e) {
+            console.log("[search.json loaded for instant search]");
+
+            $("#search_results").html("");
+
+            searchJSON = e;
+        });
+    }
+
+    function doSearch(e)
+    {
+        results = [];
+
+        if (e != "")
+        {
+            $.each(searchJSON, function(t, n) {
+                var r = n.title, i = n.title.toLowerCase(), s = n.href, o = n.date;
+                i.indexOf(e)!==-1 && results.push([r, s, o])
+            });
+
+            printResults();
+        }
+        else
+        {
+            $("#search_results").html();
+            results = [];
+            printResults();
+        }
+    }
+
+    function printResults()
+    {
+        var e = $("#search_results");
+
+        e.html("");
+
+        e.html(function() {
+            if (results.length == 0)
+            {
+                e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="#">No results found</a></li>');
+            }
+            else
+            {
+                $.each(results, function(t, n) {
+                    e.append('<li style="padding-top: 3px; padding-bottom: 3px"><a style="color: #999; word-wrap: break-word; white-space: normal" href="' + n[1] + '">' + n[0] + '</a></li>');
+                });
+            }
+        });
+    }
+
+    // Show the dropdown menu as long as there are characters in the text field
+    function checkTextField()
+    {
+        // If the value of id search_input is not empty show id search_results otherwise hide it
+        if ($('#search_input').val() != '')
+        {
+            $('#search_results').show();
+        }
+        else
+        {
+            $('#search_results').hide();
+        }
+    }
+
+    // Hide the dropdown menu if there is a left mouse click outside of it
+    $(document).mouseup(function (e)
+    {
+        var container = $("#search_results");
+
+        // if the target of the click isn't the
+        // container nor a descendant of the container
+        if (!container.is(e.target) && container.has(e.target).length === 0)
+        {
+            container.hide();
+        }
+    });
+
+    $(document).ready(function() {
+        // Create the search index on page load
+        getSearchJSON();
+
+        // Continually update search results as characters are typed
+        $("#search_input").keyup(function() {
+            // Make search inputs are case insensitive
+            var e = $(this).val().toLowerCase();
+
+            // Do the actual search
+            doSearch(e);
+        });
+    });
+
+</script> 
+
+
+  </head>
+
+  <body>
+	  
+<div class="container-fluid">
+     <div class="row-fluid">
+	<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+	  <!-- Brand -->
+	  <div class="navbar-inner" id="topbar">
+	    <div class="container center-block">
+		<a class="weblogo center-block" href="/index.html"> <img class= "weblogo" src="/assets/spatialbit_logo.png"></a>
+	    </div>
+	  </div>
+
+	    <!-- Toggle to get grouped for better mobile display -->
+    <div class="container-navbar">
+	<div class="navbar-header">
+		<button id="collapse-button" type="button" class="navbar-toggle" data-toggle="collapse" data-target="#jb-navbar-collapse">
+		<span class="sr-only">Toggle navigation</span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	    </button>
+	</div>
+	    
+	    <!-- Collect the nav links, forms, and other content for toggling -->
+	    <div class="collapse navbar-collapse" id="jb-navbar-collapse">
+	    <ul class="nav navbar-nav navlist">
+			<li><a href="/index.html">Home</a></li>
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/02_categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/04_archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/05_tags">Tags</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+			
+			<!--About me link-->
+			<li><a href="/01_About.html">About me</li>
+			
+			<!--start social  subscription-->
+			
+			<div class="soc-cont-header">
+				
+				<!--RSS link-->
+				<li><a href="/rss.xml"><img class= "social-button rss" src="/assets/rss_icon.png"></a></li>
+				  
+				<div class="tw-cont">
+					  
+					<li class=><a href="https://twitter.com/spatialbT"><img class= "social-button tw-4lo" src="/assets/themes/socicons_orig/twitter.png"><p class="tw-text">@spatialBt</p></a></li>
+					  
+				</div>
+			</div>
+			
+	      </ul>
+	    </div><!-- /.navbar-collapse -->
+	   </div>
+	    
+	</div><!-- /navbar-fixed-top -->
+    </div>
+</div>
+
+
+<div id="wrapper" class="container-fluid">
+		
+					<div class="fadeGradient hidden-xs"></div>
+
+					<!-- Add sidebar -->
+					<div class="container-sidebar hidden-xs">
+						<!--Search form here-->
+<form id="search-form" class="navbar-form" role="search">
+	<div id="searchb" class="form-group center-block">
+		<input id="search_input" data-toggle="dropdown" type="text" class="form-control" placeholder="Search" autofocus="autofocus" autocomplete="off" onkeyup="checkTextField();" />
+		<ul id="search_results" class="dropdown-menu" role="menu"></ul>
+	</div>
+</form>
+
+<!--Navlinks for side-bar.html-->
+<div class="tabwrap">
+		<div id="navlinks-sidebar">
+			<h4 id="recentp-head" class="active">Blog</h4>
+		</div>
+
+		<div id="sidebar-content">
+
+			<div  id="recentposts">
+				<ul class="posts">  
+	
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Sep 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/visualization/2014/09/27/sfcc_rgb_in_R"> Colour compositing satellite imagery in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">27 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/27/HDF_to_multi-band_geotiff"> HDF-EOS to multi-band GeoTIFF in R</a></p>
+		</li>
+	  
+	
+	
+		<li class="bigsp">
+			<p><span><font class="date-sidebar">25 Aug 2014</font></span><font class="raq"> &raquo;</font> 
+			<a class="p-title" href="/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R"> Batch processing MODIS HDF-EOS in R</a></p>
+		</li>
+	  
+	
+</ul>
+
+			</div>
+
+		</div>
+</div>
+
+
+<!--Social share buttons-->
+<div class="social-share center-block">
+	
+<h5>S h a r e</h5> 
+
+	<a id="share-tw" href="https://twitter.com/share?text=Batch processing MODIS HDF-EOS in R%20via%20@spatialbT&url=http://localhost:4000/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R" title="tweet"><img src="/assets/themes/socicons_grey_no-bg/twitter.png" alt=""/></a>
+	<a id="share-fb" href="https://www.facebook.com/sharer/sharer.php?t=Batch processing MODIS HDF-EOS in R&url=http://localhost:4000/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R" title="share on facebook"><img src="/assets/themes/socicons_grey_no-bg/facebook.png" alt="" /></a>
+	<a id="share-ln" href="http://www.linkedin.com/shareArticle?mini=true&url=http://localhost:4000/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R&title=Batch processing MODIS HDF-EOS in R&source=Shekeine" title="on linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+</div>
+
+<!--start footer-->
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div id="footer" class="span12 footer navbar-inverse navbar-fixed-bottom">
+			<p>&copy; 2017 John Shekeine under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+			  powered by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+			  and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+			</p>
+		</div>
+	</div>
+</div>
+<!--end footer-->
+
+
+					</div>
+
+					<!-- Add main page content -->
+					<div class="container-narrow">
+						<div id= "navbar-xs" class="navbar-default hidden-sm hidden-md hidden-lg" role="navigation">
+
+	<div class="cont-navb-xs">
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+			
+		<ul class="navlist-xs">
+			
+			
+			
+			
+
+
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_homepage_clone">Home</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_recent_posts">Recent posts</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/inc_twitter_widget">News</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+
+
+
+
+		</ul>
+
+	</div>
+	    
+</div><!-- /navbar-default -->
+
+						
+<div class="page-header">
+  <h1>Batch processing MODIS HDF-EOS in R <small><a href="http://bit.ly/1ltTpMg"><font size="2">Full R code on github</font></a></small></h1>
+  	
+	  <ul class="tag_box inline">
+	    <li><i class="glyphicon glyphicon-tags"></i></li>
+	    
+	    
+
+
+  
+     
+    	<li><a href="/05_tags.html#MODIS-ref">MODIS <span>2</span></a></li>
+     
+    	<li><a href="/05_tags.html#batch-ref">batch <span>2</span></a></li>
+     
+    	<li><a href="/05_tags.html#hdf-ref">hdf <span>2</span></a></li>
+     
+    	<li><a href="/05_tags.html#rstats-ref">rstats <span>2</span></a></li>
+    
+  
+
+
+
+	  </ul>
+	 
+</div>
+
+<div class="row post-full">
+  <div class="col-xs-12">
+    <div class="date">
+      <span>25 August 2014</span>
+      
+    </div>
+    <div class="content">
+      <p>####First, why bother with:</p>
+
+<hr />
+<p>1- Reprojections?</p>
+
+<ul>
+  <li>So that we can integrate MODIS data with other spatial data that’s in more 
+common CRS. In this tutorial, we’ll reproject MCD43A4 HDF data to the geographic
+CRS based on the WGS84 datum.</li>
+</ul>
+
+<p>2- Spatial subsetting?</p>
+
+<ul>
+  <li>Our region of interest (ROI) i.e. Tsavo national park is much smaller than the
+tile it falls in i.e. tile h21v09. We’ll thus clip our MCD43A4 HDF files to the 
+park’s extent. Below is an outline of our ROI within a sample MCD43A4 image (band 1).</li>
+</ul>
+
+<p><img src="/post_figures/2014-08-25-MODIS_HDF_reprojection_subsetting_R/unnamed-chunk-1-1.png" alt="center" /></p>
+
+<p>3- Spectral subsetting?</p>
+
+<ul>
+  <li>From MCD43A4’s 7 bands, we’ll extract bands 1 (Red), 4 (Green), 3 (Blue) and 2
+(NIR). This set of bands can be used for <a href="http://goo.gl/nqJPWO">RGB</a> &amp; <a href="http://goo.gl/vvZtMs">SFCC</a> image compositing as well as in the calculation of vegetation indices.</li>
+</ul>
+
+<p>Subsetting your data <strong>to retain only what you need</strong>:</p>
+
+<ol>
+  <li>saves storage space</li>
+  <li>amount of computational resources needed for subsequent processing &amp; analysis.</li>
+</ol>
+
+<hr />
+
+<p>###Tutorial data</p>
+
+<hr />
+<p>The demonstration dataset was obtained from NASA’s <a href="https://earthdata.nasa.gov/">EOSDIS</a> 
+through <a href="http://goo.gl/rBCFKr">Reverb Echo</a>.</p>
+
+<ul>
+  <li>
+    <p>Product: MODIS BRDF adjusted surface reflectance <a href="http://bit.ly/1uOoLwT">MCD43A4</a></p>
+  </li>
+  <li>
+    <p>Temporal coverage: 2001-2014. Note that MCD43A4 is produced using the “Phased 
+production strategy”. This means that you get 46 images per year with a “running”
+8 day overlap so you might want to isolate one 16 day stream from the collection,
+especially if you will be using the data in the form of a time series.</p>
+  </li>
+  <li>
+    <p>Spatial coverage: MODIS tile h21v09</p>
+  </li>
+</ul>
+
+<p>The data can be explored as follows.</p>
+
+<ul>
+  <li>Load required spatial data libraries.</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="kn">library</span><span class="p">(</span><span class="s">&quot;raster&quot;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="kn">library</span><span class="p">(</span><span class="s">&quot;rgeos&quot;</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="kn">library</span><span class="p">(</span><span class="s">&quot;maptools&quot;</span><span class="p">)</span>
+<span class="lineno">4 </span><span class="kn">library</span><span class="p">(</span><span class="s">&quot;maps&quot;</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="kn">library</span><span class="p">(</span><span class="s">&quot;rgdal&quot;</span><span class="p">)</span></code></pre></figure>
+
+<ul>
+  <li>Read sample band from a sample hdf into a raster object in R as shown below.</li>
+  <li>Note that plotting “b01” below yields Figure 1.</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>bn1 <span class="o">&lt;-</span> <span class="s">&quot;MOD_Grid_BRDF:Nadir_Reflectance_Band1&quot;</span>
+<span class="lineno">2 </span>b01 <span class="o">&lt;-</span> raster<span class="p">(</span>readGDAL<span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;HDF4_EOS:EOS_GRID:&quot;</span><span class="p">,</span><span class="s">&quot;01_MCD_R_Shell_MRT/MCD43A4.A2005113.hdf&quot;</span><span class="p">,</span><span class="s">&quot;:&quot;</span><span class="p">,</span> bn1<span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">),</span>silent<span class="o">=</span><span class="bp">T</span><span class="p">))</span></code></pre></figure>
+
+<ul>
+  <li>Checking current projection</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>b01<span class="o">@</span>crs</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"><span></span>## CRS arguments:
+##  +proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181
+## +units=m +no_defs</code></pre></figure>
+
+<ul>
+  <li>Checking current spatial extent</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>extent<span class="p">(</span>b01<span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"><span></span>## class       : Extent 
+## xmin        : 3335852 
+## xmax        : 4447802 
+## ymin        : -1111951 
+## ymax        : 0</code></pre></figure>
+
+<hr />
+
+<p>###Batch reprojecting MODIS HDF-EOS with R, SHELL and MODIS MRT</p>
+
+<hr />
+
+<p>Requirements:</p>
+
+<ol>
+  <li>
+    <p>An R installation (obviously)</p>
+  </li>
+  <li>
+    <p>MODIS MRT tool installation</p>
+  </li>
+  <li>
+    <p>A UNIX shell e.g. BASH. Windows users can install &amp; run BASH using <a href="https://www.cygwin.com/">CYGWIN</a></p>
+  </li>
+</ol>
+
+<p>Next we write a function “fun_mrt” to do tasks 1-3 above. It contains 3 args:</p>
+
+<ul>
+  <li>
+    <p>“in.dir”: path to directory with input HDF files to be processed</p>
+  </li>
+  <li>
+    <p>“out.dir”: output directory</p>
+  </li>
+  <li>
+    <p>“prm.path”: path to parameter file that contains the processing parameters e.g.
+ Here is what my parameter file, “mcd43a4.prm”, looks like:</p>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>INPUT_FILENAME <span class="o">=</span> <span class="o">/</span>home<span class="o">/</span>shekeine<span class="o">/</span>Projects<span class="o">/</span>data<span class="o">/</span>MCD43A4_h21v09<span class="o">/</span>hdf<span class="o">/</span>MCD43A4.A2000177.hdf
+<span class="lineno"> 2 </span>
+<span class="lineno"> 3 </span>SPECTRAL_SUBSET <span class="o">=</span> <span class="p">(</span> <span class="m">1</span> <span class="m">1</span> <span class="m">1</span> <span class="m">1</span> <span class="m">1</span> <span class="m">1</span> <span class="m">1</span> <span class="p">)</span>
+<span class="lineno"> 4 </span>
+<span class="lineno"> 5 </span>SPATIAL_SUBSET_TYPE <span class="o">=</span> INPUT_LAT_LONG
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span>SPATIAL_SUBSET_UL_CORNER <span class="o">=</span> <span class="p">(</span> <span class="m">-1.8</span> <span class="m">37.6</span> <span class="p">)</span>
+<span class="lineno"> 8 </span>SPATIAL_SUBSET_LR_CORNER <span class="o">=</span> <span class="p">(</span> <span class="m">-4.3</span> <span class="m">39.5</span> <span class="p">)</span>
+<span class="lineno"> 9 </span>
+<span class="lineno">10 </span>OUTPUT_FILENAME <span class="o">=</span> <span class="o">/</span>home<span class="o">/</span>shekeine<span class="o">/</span>Projects<span class="o">/</span>data<span class="o">/</span>MCD43A4_tsavo<span class="o">/</span>sample.hdf
+<span class="lineno">11 </span>
+<span class="lineno">12 </span>RESAMPLING_TYPE <span class="o">=</span> NEAREST_NEIGHBOR
+<span class="lineno">13 </span>
+<span class="lineno">14 </span>OUTPUT_PROJECTION_TYPE <span class="o">=</span> GEO
+<span class="lineno">15 </span>
+<span class="lineno">16 </span>OUTPUT_PROJECTION_PARAMETERS <span class="o">=</span> <span class="p">(</span> 
+<span class="lineno">17 </span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="m">0.0</span>
+<span class="lineno">18 </span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="m">0.0</span>
+<span class="lineno">19 </span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="m">0.0</span>
+<span class="lineno">20 </span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="m">0.0</span>
+<span class="lineno">21 </span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="m">0.0</span> <span class="p">)</span>
+<span class="lineno">22 </span>
+<span class="lineno">23 </span>DATUM <span class="o">=</span> WGS84<span class="p">)</span></code></pre></figure>
+
+<p>And behold, the function:</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>fun_mrt <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>in.dir<span class="p">,</span> prm.path<span class="p">,</span> out.dir<span class="p">){</span>
+<span class="lineno"> 2 </span>  
+<span class="lineno"> 3 </span>  INLIST <span class="o">&lt;-</span> <span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span>in.dir<span class="p">,</span> full.names<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno"> 4 </span>  INNAMES<span class="o">&lt;-</span> <span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span>in.dir<span class="p">,</span> full.names<span class="o">=</span><span class="bp">F</span><span class="p">)</span>
+<span class="lineno"> 5 </span>  
+<span class="lineno"> 6 </span>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span> <span class="kp">length</span><span class="p">(</span>INLIST<span class="p">)){</span>
+<span class="lineno"> 7 </span>    
+<span class="lineno"> 8 </span>    <span class="c1">#Call to sh and mrt to subset, reproject from sin to epsg 4326 and rewrite all hdf&#39;s</span>
+<span class="lineno"> 9 </span>   <span class="kp">system</span><span class="p">(</span>
+<span class="lineno">10 </span>    command<span class="o">=</span><span class="kp">paste</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;cd &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">11 </span>          
+<span class="lineno">12 </span>    <span class="c1">#Write hdf file to text file</span>
+<span class="lineno">13 </span>    <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;echo &quot;</span><span class="p">,</span> INLIST<span class="p">[</span>i<span class="p">],</span> <span class="s">&quot; &gt; &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaicinput.txt&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">14 </span>        
+<span class="lineno">15 </span>    <span class="c1">#Run mrt mosaic and write output to HDF file</span>
+<span class="lineno">16 </span>    <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;mrtmosaic -i &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaicinput.txt -o &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaic_tmp.hdf&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">17 </span>          
+<span class="lineno">18 </span>    <span class="c1">#Call resample </span>
+<span class="lineno">19 </span>    <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;resample -p &quot;</span><span class="p">,</span> prm.path<span class="p">,</span> <span class="s">&quot; -i &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaic_tmp.hdf -o &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> INNAMES<span class="p">[</span>i<span class="p">],</span><span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span>sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">20 </span>      
+<span class="lineno">21 </span>    <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;exit 0&quot;</span><span class="p">),</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span> intern<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno">22 </span>   
+<span class="lineno">23 </span>   <span class="kp">print</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;Done processing:&quot;</span><span class="p">,</span> INNAMES<span class="p">[</span>i<span class="p">]))</span>
+<span class="lineno">24 </span>   
+<span class="lineno">25 </span>  <span class="p">}</span>
+<span class="lineno">26 </span>  
+<span class="lineno">27 </span>  <span class="c1">#Clean up working files</span>
+<span class="lineno">28 </span>  <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/mosaic_tmp.hdf&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">29 </span>  <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/mosaicinput.txt&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">30 </span>  <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/resample.log&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">31 </span><span class="p">}</span></code></pre></figure>
+
+<p>Executing fun_mrt on our HDF dataset processes it as per the settings in the parameter file.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>fun_mrt<span class="p">(</span>in.dir<span class="o">=</span><span class="s">&quot;/home/in&quot;</span><span class="p">,</span> prm.path<span class="o">=</span><span class="s">&quot;/home/mcd43a4.prm&quot;</span><span class="p">,</span> out.dir<span class="o">=</span><span class="s">&quot;/home/out&quot;</span><span class="p">)</span></code></pre></figure>
+
+<hr />
+
+<h4 id="explore-result">Explore result</h4>
+
+<hr />
+
+<p><img src="/post_figures/2014-08-25-MODIS_HDF_reprojection_subsetting_R/unnamed-chunk-9-1.png" alt="center" /></p>
+
+<ul>
+  <li>
+    <p>The data is now reprojected to the geographic CRS (EPSG=4326) and spatially 
+subset to the region defined in the parameter file.</p>
+  </li>
+  <li>
+    <p>Spatial subsets done by “fun_mrt” can only be defined and implemented
+with square/rectangular ROI’s. If necessary, it is possible to clip the boundaries of the images to 
+match those of the ROI even more closely using the <code>mask()</code> function in R.</p>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="references">References</h4>
+
+<hr />
+<ul>
+  <li>
+    <p>R documentation on libraries used</p>
+  </li>
+  <li>
+    <p><a href="http://bit.ly/1wwLHWp">MODIS reprojection tool manual</a></p>
+  </li>
+  <li>
+    <p><a href="http://bit.ly/1zyo2RG">BASH documentation</a></p>
+  </li>
+</ul>
+
+    </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="glyphicon glyphicon-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/02_categories.html#modis-ref">
+    		modis <span>2</span>
+    	</a></li>
+    
+  
+
+
+    </ul>
+    
+
+   <hr>
+    <ul class="pagination">
+    
+      <li class="prev disabled"><a>&larr; Previous</a></li>
+    
+      <li><a href="/04_archive.html">Archive</a></li>
+    
+      <li class="next"><a href="/modis/2014/08/27/HDF_to_multi-band_geotiff" title="HDF-EOS to multi-band GeoTIFF in R">Next &raquo;</a></li>
+    
+    </ul>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'shekeine'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+</div>
+
+					</div>
+		
+		<div id= "sidebar-right" class="hide767">
+
+			<!--Nav tabs for side-bar.html-->
+
+<!--
+<div id="inset">
+	
+	<img id="mypic" src="/imgs/jj.jpg" alt=""/></a>
+
+	<div class="mynet">
+		
+		<a id="stack" href="http://goo.gl/s0Jzdo" title="stackoverflow"><img src="/assets/stack_overflow.png" alt=""/></a>
+		<a id="rg" href="http://goo.gl/9tdlb0" title="ResearchGate"><img src="/assets/rg.png" alt="" /></a>
+		<a id="ln" href="http://goo.gl/579bS5" title="Linked-in"><img src="/assets/themes/socicons_grey_no-bg/linkedin.png" alt="" /></a>
+
+	</div>
+</div>
+-->
+
+<div  class="research-hi-mainheads"><h4>Geospatial highlights</h4></div>
+  <div class="center-content">
+	      <a class="twitter-timeline"  href="https://twitter.com/spatialbT/timelines/530665712638255104" data-widget-id="530668359738605568">spatialbT</a>
+	    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+  </div>
+</div> 
+
+
+
+			
+		</div>
+</div>
+
+
+<!--Initialize custom scrollbars on main page content + codeblocks-->
+
+	<script>
+		(function($){
+			$(document).ready(function(){
+				
+$(function()
+{
+	$('pre, #recentposts, .right-sidebar, .stream').each(
+		function()
+		{
+			$(this).jScrollPane(
+				{
+					showArrows: $(this).is('.arrow')
+				}
+			);
+			var api = $(this).data('jsp');
+			var throttleTimeout;
+			$(window).bind(
+				'resize',
+				function()
+				{
+					if (!throttleTimeout) {
+						throttleTimeout = setTimeout(
+							function()
+							{
+								api.reinitialise();
+								throttleTimeout = null;
+							},
+							1 //Time (ms) it takes to re-initialise .jscrollpane() on window resize: minimize desired.
+						);
+					}
+				}
+			);
+		}
+	)
+
+});
+
+			});
+		})(jQuery);
+
+
+	</script>
+</body>
+</html>
+

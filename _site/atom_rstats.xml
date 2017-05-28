@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  
+<title>Spatialbit</title>
+<link href="https://shekeine.github.io/" rel="self"/>
+<link href="https://shekeine.github.io"/>
+<updated>2017-05-28T15:51:41+02:00</updated>
+<id>https://shekeine.github.io</id>
+<author>
+<name>John Shekeine</name>
+<email>shekeinespere@gmail.com</email>
+</author>
+
+
+</feed>

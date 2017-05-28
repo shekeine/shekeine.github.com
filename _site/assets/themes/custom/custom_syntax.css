@@ -1,0 +1,17 @@
+/*Add some space before and after codeblocks*/
+.highlight{background: transparent; margin-top: 20px; margin-bottom: 20px;}
+
+.highlight pre {overflow: auto; max-height: 300px; max-width: 800px; word-wrap: pre;}
+.highlight pre code { overflow: auto; white-space: pre; word-wrap: pre;}
+
+/*Make line between linenos & code + fade out line numbers*/
+.highlight .lineno {color: #ccc; display:inline-block; padding: 0 5px;border-right:1px solid #ccc;}
+
+/*Make line numbers unselectable: excludes from copy-paste user ops*/
+.highlight .lineno {-webkit-user-select: none;-moz-user-select: none; -o-user-select: none;}
+
+/*Override text selection highlighting for linenos*/ 
+.lineno::-moz-selection {background-color: transparent;}/*Mozilla specific*/
+
+.lineno::selection {background-color: transparent;}/*Other major browsers*/
+

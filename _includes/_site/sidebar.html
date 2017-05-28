@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Le styles -->
+</head>
+ 
+<body>
+	<div class="container-sidebar hidden-xs">
+		
+		<ul id="tabs-sidebar" class="nav nav-tabs center-block" data-tabs="tabs">
+			<li class="active hidden-xs"><a href="#recentposts" data-toggle="tab">Recent posts</a></li>
+			
+			<li class="active hidden-sm hidden-md hidden-lg"><a href="#gallery" data-toggle="tab">Gallery</a></li>
+
+			<li class="hidden-sm hidden-md hidden-lg"><a href="#recent-xs" data-toggle="tab">Recent posts</a></li>
+			
+			<li ><a href="#news" data-toggle="tab">News</a></li>
+		</ul>
+		
+		<div id="my-tab-content" class="tab-content">
+			<div class="active tab-pane hidden-xs" id="recentposts">
+				{% include recent_posts.html %}
+			</div>
+			
+			<div class="active tab-pane hidden-sm hidden-md hidden-lg" id="gallery">
+
+			</div>
+			
+			<div class="tab-pane hidden-sm hidden-md hidden-lg" id="recent-xs">
+				
+			</div>
+			
+			<div class="tab-pane" id="news">
+				<p>News</p>
+			</div>
+		</div>	
+			
+	</div><!--container-sidebar -->
+ 
+</body>
+</html>

@@ -1,0 +1,14 @@
+<div class="hidden-sm hidden-md hidden-lg">
+
+		<ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+			<li id="gallerytab" class=""><a href="#gallery" data-toggle="tab">Gallery</a></li>
+			
+			<li id="newstab" ><a href="#news" data-toggle="tab">News</a></li>
+
+			<li class="dropdown"> <a href="#recentxs" class="dropdown-toggle" data-toggle="dropdown">Recent posts <span class="caret"></span></a>
+				<ul id="xs-dropd" class="dropdown-menu container-narrow" role="menu">
+					{% include recent_posts.html %}
+				</ul>
+			</li>
+		</ul>
+</div>

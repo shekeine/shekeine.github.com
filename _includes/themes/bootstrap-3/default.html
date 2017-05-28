@@ -1,0 +1,71 @@
+{% include header.html %}
+
+<div id="wrapper" class="container-fluid">
+		
+					<div class="fadeGradient hidden-xs"></div>
+
+					<!-- Add sidebar -->
+					<div class="container-sidebar hidden-xs">
+						{% include sidebar.html %}
+					</div>
+
+					<!-- Add main page content -->
+					<div class="container-narrow">
+						{% include navmenu_tabs_xs.html %}
+						{{ content }}
+					</div>
+		
+		<div id= "sidebar-right" class="hide767">
+
+			{% include sidebar-right.html %}
+			
+		</div>
+</div>
+{% include JB/analytics %}
+
+<!--Initialize custom scrollbars on main page content + codeblocks-->
+
+	<script>
+		(function($){
+			$(document).ready(function(){
+				
+$(function()
+{
+	$('pre, #recentposts, .right-sidebar, .stream').each(
+		function()
+		{
+			$(this).jScrollPane(
+				{
+					showArrows: $(this).is('.arrow')
+				}
+			);
+			var api = $(this).data('jsp');
+			var throttleTimeout;
+			$(window).bind(
+				'resize',
+				function()
+				{
+					if (!throttleTimeout) {
+						throttleTimeout = setTimeout(
+							function()
+							{
+								api.reinitialise();
+								throttleTimeout = null;
+							},
+							1 //Time (ms) it takes to re-initialise .jscrollpane() on window resize: minimize desired.
+						);
+					}
+				}
+			);
+		}
+	)
+
+});
+
+			});
+		})(jQuery);
+
+
+	</script>
+</body>
+</html>

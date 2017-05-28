@@ -1,0 +1,778 @@
+/*Site branding*/
+
+.weblogo{
+	height:80px;
+	width:240px; 
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/*Make brand smaller at xs screen sizes*/
+@media screen and (max-width:766px) {
+	.weblogo{
+	height:45px;
+	width:150px;
+	}
+}
+
+/*Make very top bar smaller at xs screen sizes*/
+@media screen and (max-width:766px) {
+#topbar{height: 45px;}
+}
+
+.navbar-inner{
+	height:80px;
+	border:1px solid #d4d4d4;
+	-webkit-border-radius:40px;
+	-moz-border-radius:0px;
+	border-radius:0px;
+}
+
+/*Put main navbar at dead center*/
+.navlist{width:100%;}
+@media screen and (min-width:767px){.navlist{text-align:center;}}
+.navlist ul li {display:inline;}.navlist ul li a {display:inline-block;}
+
+/*Height of navbar that contains main nav menu*/
+@media screen and (min-width:767.8px){.navbar-fixed-top{max-height:144px;}}
+
+/*_____________________________Site branding_________________________*/
+
+/*main navbar content*/
+
+.container-navbar {
+  margin-left:248px;
+  margin-top:3px;
+  font-family: "arapey";
+  font-size:16px;
+  font-weight:100;
+  text-align: justify;
+  max-width: calc(100% - (260px + 20% + 20px));
+}
+
+/*Navbar text*/
+.nav{
+	margin-left:0px;
+	list-style:none;
+}
+
+.nav li{
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+/*Main nav collapsed*/
+#collapse-button{height:30px; float:right; background: yellow;}
+
+.navbar-collapse{overflow-x:hidden;}
+
+/*Reduce free space in small screens to avoid navbar content wrapping*/
+
+@media screen and (min-width:768px) and (max-width:992px){
+.nav > li {
+padding-left: 5px;
+padding-right: 5px;}
+}
+
+.navbar .nav>li>a{
+	padding:5px 5px 5px;
+	margin-bottom:4px;
+	color:#7F382C;
+	text-decoration:none;
+}
+
+/*Nav links styles*/
+
+.navbar-default .navbar-nav > li > a, .navbar-default .navbar-nav > li > a {
+	height:26px;
+	padding-top:5px;
+	border-radius:2px;
+}
+
+/*Hover effects*/
+
+.navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
+	background-color:#ef9f73;
+	color: white;
+}
+
+/*Active navlink styles*/
+
+.navbar-default .navbar-nav > li.active > a, .navbar-default .navbar-nav > li.active > a {
+	background:#E7702E;
+	color: white;
+}
+
+/*Move container navbar further up in xs mode*/
+@media screen and (max-width:767.8px){
+.container-navbar{margin-left:35%;margin-top:-40px; max-width:800px;}
+}
+
+/*Prevent content wrapping in sm screens: add width of .soc-cont-header*/
+@media screen and (min-width:768px) and (max-width:928px){
+.container-navbar{max-width: calc(100% + 150px - (260px + 20% + 20px));}
+}
+/*________________________main navbar content_________________________*/
+
+/*Search bar styles*/
+
+/*Search bar interior*/
+#search-form{
+z-index: 400;/*Must be above colour gradient bg here!!!*/
+	height: 27px;
+}
+
+/*Search bar text*/
+#searchb input {
+font-style: italic;
+}
+
+.form-control{height:30px;}
+.navbar-form{border:none;}
+
+#searchb{
+margin-left: 10px;
+position: absolute;
+	width:130px;
+	z-index: 400; /*Must be above colour gradient bg here!!!*/
+}
+
+#search_results{width: 250px; left: -20px;}
+
+/*__________________________Search bar styles_________________________*/
+
+/*Load  fonts*/
+@font-face {
+    font-family: arapey;
+    src: url("/assets/themes/fonts/Arapey-Regular.ttf");
+}
+
+/*Page content wrapper*/
+#wrapper{
+max-width: 100%;
+padding-left: 20px;
+}
+
+.container-sidebar {
+float: left;
+position:fixed;
+left:0px;
+
+  width: 260px;
+  max-width: 260px;
+  height:100%;
+  background-color: #FFFFFF;
+
+  margin-left:0;
+  padding-top: 35px;
+  margin-top:40px;float: left;
+
+  border-right: 1px solid;
+  border-color: #e5efed;
+  border-radius: 0.5px;
+  -webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.05);
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.05);
+}
+
+/*Add styles to ctrl fade to nothing on scroll*/
+.fadeGradient {
+position: fixed;
+padding-right:40px;
+border: 4px;
+width: 100%;
+width: calc(100% - (20% + 48px));
+    z-index:10;
+    top: 110px; 
+    left:0;
+    height:15px;
+    background-image: linear-gradient(to top, rgba(255,255,255,0.8) 10%, rgba(48,0,0,1) 40%);
+}
+
+/* Custom container */
+
+.container-narrow p, .container-narrow li{
+font-family:Palatino;
+font-size: 16px;
+}
+
+.container-narrow {
+ margin-top:-80px;
+
+float:left;
+overflow: auto;
+position: relative;
+
+padding-left:40px;
+padding-right:40px;
+
+max-width: calc(100% - (260px + 20% + 20px));
+height: 100%;
+width: 100%;
+
+font-family: "arapey";
+font-size: 18px;
+text-align: justify;
+
+  background-color:#FFFFFF;
+  border: 1px solid #e3e3e3;
+  border-left: none;
+  border-radius:1px;
+ }
+
+/*At 767 breakpoint, just make width calc natural*/
+ @media screen and (max-width:767.8px){
+.container-narrow{
+width: 100%;
+max-width: 700px;
+}
+}
+
+/*For md screens, tweak main page width*/
+@media (min-width:768px) and (max-width:1280px) {
+.container-narrow {
+width: calc(100% - 290px);
+margin-left: 240px; 
+padding: 20px;
+}
+}
+
+/*Ensure page content is pushed to the right when in very wide screens*/
+@media (min-width:1280px) {
+.container-narrow {margin-left: 240px;}
+}
+ 
+/*Reduce top margin in xs mode*/
+@media screen and (max-width:766px) {
+.container-narrow {margin-top:-20px;}
+}
+
+ /*Adapt vertical position of main content to changing main nav height*/
+@media (min-width:767px) {.container-narrow{
+ top:120px;
+ }
+}
+
+/*Make images in main page responsive to changes in device width*/
+.container-narrow img{
+max-width: 100%;
+}
+
+/*Configure container-narrow's XS navtabs*/
+#navtabs-xs{
+text-align: center;
+}
+
+#xs-navs{text-align: center;}
+#navtabs-xs{float:none; 
+display: inline-block;
+}
+
+
+#xs-dropd{
+position: absolute;
+left:-60px;
+	max-height: 130px;
+	width: 250px;
+	overflow-y:auto;
+}
+
+/*Text within the droppx*/
+#xs-dropd .posts{color: #7d0000; 
+margin-left: -35px;
+}
+
+body {
+  background-color:#300000;
+    padding-top: 80px;
+    padding-bottom: 60px;
+}
+
+/* posts index */
+.post > h3.title {
+  position: relative;
+  padding-top: 10px; }
+
+.post > h3.title span.date {
+  position: absolute;
+  right: 0;
+  font-size: 0.9em; }
+
+.post > .more {
+  margin: 10px 0;
+  text-align: left; }
+
+/* post-full*/
+.post-full .date {
+  margin-bottom: 20px;
+  color: #6F6F71;
+  font-weight: normal; }
+
+/* tag_box */
+.tag_box {
+  list-style: none;
+  margin: 0;
+  overflow: hidden; }
+
+.tag_box li {
+  line-height: 28px; }
+
+.tag_box li i {
+  opacity: 0.9; }
+
+.tag_box.inline li {
+  float: left; }
+
+.tag_box a {
+  padding: 3px 6px;
+  margin: 2px;
+  background: #eee;
+  color: #555;
+  border-radius: 3px;
+  text-decoration: none;
+  border: 1px dashed #cccccc; }
+
+.tag_box a span {
+  vertical-align: super;
+  font-size: 0.8em; }
+
+.tag_box a:hover {
+  background-color: #e5e5e5; }
+
+.tag_box a.active {
+  background: #57A957;
+  border: 1px solid #4c964d;
+  color: #FFF; }
+
+[alt=center] {
+  display: block;
+  margin: auto;
+}
+/* Left-Side bar styles */
+
+/*Center nav tabs in sidebar*/
+#navlinks-sidebar{
+  text-align: center;
+  list-style: none;
+margin-bottom: 4px;
+}
+
+#recentp-head{
+font-family: arapey;
+background:#ef9f73;
+color: white;
+margin-top: 0px;
+padding-left: 4px;
+padding-right: 4px;
+padding-bottom: 2px;
+display: inline;
+}
+
+/*Styles for recent posts content*/
+.raq{
+color:green;
+}
+
+#sidebar-content #recentposts{
+background-color: transparent;
+padding-right: 5px;
+padding-top: 10px !important;
+border-bottom: 1px solid;
+border-top: 1px solid;
+border-color: #F0F0F0;
+border-radius: 0px;
+}
+
+.date-sidebar{color:#7F7F7F;font-size:10px;}
+
+/*Paragraph spacing for recent posts*/
+.bigsp{line-height: 160%;}
+
+.p-title{font-size: 13px; font-family: "Arial Narrow";
+color: #D65915; 
+font-weight: 600;
+text-shadow: 1px 0px 20px green;
+}
+
+/*Social buttons*/
+.soc-cont-header{
+float:right;
+  border-left:2px solid;	
+  border-color: #F0F0F0;
+  width:150px;
+  height:30px;
+  padding-top:9px;
+}
+
+@media screen and (max-width:769px){
+.soc-cont-header{
+	margin-right:-5px;
+ }
+}
+
+.social-button{
+display: block;
+float:left;
+width: 20px;
+height: 20px;
+}
+
+/*Rss button*/
+.rss{float:left;}
+
+/*Twitter follow cont*/
+.tw-cont{
+  position:relative;
+  width:87px;
+  height: 20px;
+  margin-left:40px;
+  background-color:white;
+  border-radius: 3px;
+  border: 1px solid;
+  border-color:#adc2d1;
+}
+
+/*Twitter follow button*/
+.tw-4lo{
+float:left;
+margin-left:-8px;
+  height:19px;
+  border-radius: 4px;
+}
+
+/*Twitter follow text*/
+.tw-text{
+float:right;
+margin-right:-5px;
+  margin-left:-48px;
+  color: #8a9ba7;
+  font-size:13px;
+}
+
+.tw-text:hover{text-decoration:none;}
+
+/*Carousel*/
+.carousel{position:relative; width:100%;border-radius:4px;background-color:#4D4D4D;}
+
+.carousel-inner>.item>img,.carousel-inner>.item>a>img{
+max-width:70%;
+margin-top:2px;
+margin-bottom:2px;
+border-radius:5px;
+}
+
+.carousel-inner > .item {
+	position: relative;
+}
+
+/* Carousel fade on slide*/
+.carousel-fade .carousel-inner .item {
+  opacity: 0;
+  -webkit-transition-property: opacity;
+  -moz-transition-property: opacity;
+  -o-transition-property: opacity;
+  transition-property: opacity;
+}
+.carousel-fade .carousel-inner .active {
+  opacity: 1 !important;
+}
+.carousel-fade .carousel-inner .active.left,
+.carousel-fade .carousel-inner .active.right {
+  left: 0;
+  opacity: 0;
+  z-index: 1;
+}
+.carousel-fade .carousel-inner .next.left,
+.carousel-fade .carousel-inner .prev.right {
+  opacity: 1;
+}
+.carousel-fade .carousel-control {
+  z-index: 2;
+}
+/*Caption text*/
+.carousel-caption{
+font-size: 12px;
+font-family: " Didot";
+  position: absolute;
+  right: 15%;
+  bottom: 20px;
+  color:#FFFFFF;
+   -webkit-stroke-width: 5.3px;
+
+   -webkit-stroke-color: #FFFFFF;
+
+   -webkit-fill-color: #FFFFFF;
+
+   text-shadow: 1px 0px 20px yellow;
+ }
+
+/*Responsive design*/
+@media screen and (max-width:766px) {
+.container-sidebar{
+float:none;
+display:block;
+  margin-left:20px;
+  margin-right:20px;
+  margin-bottom:10px;
+  max-width: 100%;
+}
+}
+
+@media screen and (max-width:768px){
+.sidebar-content-container{
+	height:90%;
+ }
+}
+
+ /* Sticky footer styles
+      -------------------------------------------------- */
+      /* Set the fixed height of the footer here */
+      #footer {
+      margin-top: calc(40%);
+      position: relative;
+      padding-top:5px;
+      
+      width: 100%;
+      height: auto;
+		font-size:9px;
+		text-align: center;
+		background-color:#f2f2f2;
+      }
+
+/*Sharing buttons within sidebar*/
+.social-share h5{text-align: center; font-style: bold; color: #7F7878;}
+.social-share {
+margin-top: 50px;
+width: 120px;
+}
+
+.social-share img{
+width: 30px;
+height: 30px;
+}
+
+.social-share-element{
+float:left;
+display: inline;
+height: 20px;
+width:20px;
+}
+#inset{
+background: #FBF4F4;
+width: 150px;
+height: 250px;
+}
+
+#mypic{
+display: block;
+border-radius: 3px;
+height: 200px;
+width: 150px;
+}
+#rg{
+margin-left: 15px;
+margin-right: 15px; 
+}
+.mynet{
+text-align: center;
+margin-top: 10px;
+}
+.mynet img{
+width: 30px;
+height: 30px;
+}
+
+/*Right sidebar styles*/
+
+/*Header bar*/
+.content-header{
+top: 0px;
+text-align: center;
+margin-bottom: 5px;
+max-height: 35px;
+width:100%;
+background: #ef9f73;
+background:#E7702E;
+border: 1px solid #7F7F7F;
+border-bottom: none;
+padding-bottom: 0.5px;
+}
+
+/*Main headings on RHS bar*/
+.research-hi-mainheads{
+z-index: 1;
+width: 100%;
+text-align: center;
+
+color: #4D4D4D;
+color:black;
+font-family: arapey;
+font-size: 20px;
+text-shadow: 1px 0px 20px #DED7D7;
+}
+
+.research-hi-mainhead{
+z-index: 1;
+width: 100%;
+text-align: center;
+
+color: #4D4D4D;
+color:black;
+font-family: arapey;
+font-size: 20px;
+height:30px;
+ background-image: linear-gradient(to bottom, rgba(200,200,200,0.2) 0%, rgba(115,115,115,0.6) 100%);
+}
+
+.research-hi{
+float:left;
+overflow: auto;
+width: 100%;
+height: 600px;
+
+  padding-right: 5px !important;
+  padding-left: 5px !important;
+  margin-top:0px;
+  border: 1px solid;
+  border-color: #e5efed;
+  background-image: linear-gradient(to bottom, rgba(200,200,200,0.2) 0%, rgba(115,115,115,0.6) 100%);
+
+  border-radius: 0.5px;
+  -webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.05);
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.05);
+}
+
+/*Text Heading for content containers*/
+.content-header h6{
+margin-top: 0px;
+color: #D04C16;
+color: white;
+
+font-family: arapey;
+font-weight: 500;
+font-size: 18px;
+width: 100%;
+text-shadow: 1px 0px 20px #DED7D7;
+}
+
+/*Content containers in RHS bar*/
+.research-hi-content{
+width:  100%;
+height: auto;
+border: 1px solid #efeded;
+background: white;
+}
+
+dropcaps{
+font-size: 44px;
+ float: left; 
+color: #903;
+ line-height: 35px;
+ padding-top: 3px; 
+ padding-right: 3px;
+ font-family: Times, serif, Georgia;
+}
+
+.research-hi-content p {
+font-family: arapey;
+padding-right: 20px;
+padding-left: 20px;
+}
+
+.mfp-title{
+color: orange;
+font-size: 20px;
+font-family: arapey;
+}
+.research-hi-content img{
+display: block;
+width: 180px;
+max-width: 100%;
+float: left;
+margin-right: 10px;
+margin-bottom: 10px;
+}
+
+
+/*Customize sidebar-right with tweets*/
+#sidebar-right{
+overflow: auto;
+margin-top: 40px;
+margin-left: 5px;
+width: 20%;
+min-width: 180px;
+height: 1110px;
+border-radius: 2px;
+float: left;
+background: white;
+text-align: center;
+}
+@media screen and (max-width:767.8px){
+.hide767{
+display: none;
+}
+}
+
+/*XS minor navbar styles*/
+/*The navbar itself*/
+#navbar-xs{
+height: 30px;
+border: 0.5px solid #BFBFBF;
+border: none;
+background: transparent;
+}
+
+.cont-navb-xs{
+max-height: 40px;
+width: 100%;
+text-align: center;
+}
+
+.navlist-xs{
+list-style: none;
+}
+
+.navlist-xs>li>a {
+	color:#7F382C;
+	font-family: arapey;
+	font-size: 18px;
+	background: #E7E2E2;
+	padding-right: 10px;
+	padding-left: 10px;
+	margin-left: -10px;
+}
+
+.navlist-xs>li>a:hover {
+display: inline;
+	text-decoration:none;
+	background-color: #ef9f73;
+	color: white;
+}
+
+.navlist-xs>li.active>a {
+	text-decoration:none;
+	background-color:#E7702E;
+	color:white;
+}
+
+.navlist-xs>li {
+display: inline;
+}
+
+/*Hide xs navmenu in larger screens*/
+@media screen and (min-width:767px) {
+#nav-xs{
+display: none !important;
+}
+}
+
+/*Archive page styles*/
+
+/*Date archive for recent posts*/
+.date-arch{color:#7F7F7F;font-size:18px;}
+.pdate-full{color:#7F7F7F;font-size:10px;}
+
+.p-title-arch{font-size: 18px; font-family: "arapey"; color: #D65915; 
+font-weight: 200;text-shadow: 1px 0px 20px #0000FF;}
+
+/*Class to center content*/
+.center-content{text-align: center;}

@@ -1,0 +1,232 @@
+<h4 id="why-not-just-stick-with-hdf">Why not just stick with HDF?</h4>
+
+<hr />
+
+<p>1- Band math and manipulation with HDF-EOS data in R is a pain in the ear. e.g.
+to read a specific band (e.g. band 1 from MODIS  <a href="http://bit.ly/1uOoLwT">MCD43A4</a>) into R, one has to:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> bn1 <span class="o">&lt;-</span> <span class="s">&quot;MOD_Grid_BRDF:Nadir_Reflectance_Band1&quot;</span>
+<span class="lineno">2</span> b01 <span class="o">&lt;-</span> raster<span class="p">(</span>readGDAL<span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;HDF4_EOS:EOS_GRID:&quot;</span><span class="p">,</span><span class="s">&quot;02_HDF_2_mband_geotiff/hdf_in /MCD43A4.A2001033.hdf&quot;</span><span class="p">,</span><span class="s">&quot;:&quot;</span><span class="p">,</span> bn1<span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">)),</span> silent<span class="o">=</span><span class="bp">T</span><span class="p">)</span></code></pre></div>
+
+<ul>
+  <li>Imagine the mess you would have if you had to do
+a lot of band math or manipulations with hyperspectral data. Besides, the reference
+to band ID’s by name (rather than index position) will have you pulling your hair 
+out if the input data changes to some other product with different band names.</li>
+</ul>
+
+<p>2- There are dedicated tools to work with HDF-EOS data formats..</p>
+
+<ul>
+  <li>However, if you are going to do your modelling and statistical anaylsis in R, 
+you might as well pre-process your data within R. Who wants to keep shuttling 
+between 10 different programs and twice as many folders between data preparation
+and results? Not me.  </li>
+</ul>
+
+<p>So, we agree that it would be nice to have a <b>neat</b> way to convert whole HDF-EOS 
+files as multi-band raster objects in R. My solution is to write an R function that 
+can stack all the dimensions of a <i>batch of input HDF-EOS</i> into multi-band 
+GeoTIFFs for which R (and any other sensible data language or GIS) has excellent 
+support.</p>
+
+<p>Just to get a feel of the data used in this post, we can plot the image band read in above and overlay 
+an outline of our region of interest (ROI) as follows:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno"> 1</span> <span class="c1">#Plot band 1 from MCD43A4.A2001033.hdf</span>
+<span class="lineno"> 2</span> par<span class="p">(</span>mar<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">0</span><span class="p">))</span>
+<span class="lineno"> 3</span> plot<span class="p">(</span>b01<span class="p">,</span> axes<span class="o">=</span><span class="bp">F</span><span class="p">)</span>
+<span class="lineno"> 4</span> 
+<span class="lineno"> 5</span> <span class="c1">#Import Tsavo ROI shapefile</span>
+<span class="lineno"> 6</span> tsavo_diss <span class="o">&lt;-</span> readShapePoly<span class="p">(</span>fn<span class="o">=</span><span class="s">&quot;02_HDF_2_mband_geotiff/tsavo_park_diss.shp&quot;</span><span class="p">,</span> 
+<span class="lineno"> 7</span>                 proj4string<span class="o">=</span>CRS<span class="p">(</span><span class="s">&quot;+proj=longlat +datum=WGS84&quot;</span><span class="p">))</span>
+<span class="lineno"> 8</span> 
+<span class="lineno"> 9</span> <span class="c1">#Transform Tsavo CRS to match b01</span>
+<span class="lineno">10</span> tsavo.sin <span class="o">&lt;-</span> spTransform<span class="p">(</span>x<span class="o">=</span>tsavo_diss<span class="p">,</span> CRSobj<span class="o">=</span>b01<span class="o">@</span>crs<span class="p">)</span>
+<span class="lineno">11</span> 
+<span class="lineno">12</span> <span class="c1">#Overlay Tsavo ROI</span>
+<span class="lineno">13</span> plot<span class="p">(</span>tsavo.sin<span class="p">,</span> add<span class="o">=</span><span class="bp">T</span><span class="p">,</span> asp<span class="o">=</span><span class="m">1</span><span class="p">,</span> lwd<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">14</span> title<span class="p">(</span><span class="s">&quot;Figure 1: Tsavo ROI within MODIS HDF band 1&quot;</span><span class="p">,</span> line<span class="o">=</span><span class="m">-1</span><span class="p">)</span></code></pre></div>
+
+<p><img src="/post_figures/2014-08-27-HDF_to_multi-band_geotiff/unnamed-chunk-2.png" alt="center" /> </p>
+
+<hr />
+
+<h3 id="obtaining-tutorial-data">Obtaining tutorial data</h3>
+
+<hr />
+<p>We’ll use the same HDF data as that <a href="http://bit.ly/1ozvxl9">in this post</a>.
+Load the required libraries as shown below.</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> <span class="kn">library</span><span class="p">(</span><span class="s">&quot;raster&quot;</span><span class="p">)</span>
+<span class="lineno">2</span> <span class="kn">library</span><span class="p">(</span><span class="s">&quot;rgeos&quot;</span><span class="p">)</span>
+<span class="lineno">3</span> <span class="kn">library</span><span class="p">(</span><span class="s">&quot;maptools&quot;</span><span class="p">)</span>
+<span class="lineno">4</span> <span class="kn">library</span><span class="p">(</span><span class="s">&quot;maps&quot;</span><span class="p">)</span>
+<span class="lineno">5</span> <span class="kn">library</span><span class="p">(</span><span class="s">&quot;rgdal&quot;</span><span class="p">)</span></code></pre></div>
+
+<hr />
+
+<h3 id="doing-it-with-r-shell-and-modis-mrt">Doing it with R, SHELL and MODIS MRT</h3>
+
+<hr />
+
+<p>Requirements:</p>
+
+<ol>
+  <li>
+    <p>An R installation (obviously)</p>
+  </li>
+  <li>
+    <p><a href="http://bit.ly/1u4oG9W">MODIS MRT installation</a></p>
+  </li>
+  <li>
+    <p>A UNIX shell e.g. BASH. Windows users can install &amp; run BASH using <a href="https://www.cygwin.com/">CYGWIN</a>  </p>
+  </li>
+</ol>
+
+<p>Next we write a function “hdf2mband” to do the work for us. It contains 4 args: </p>
+
+<ul>
+  <li>
+    <p>“in.dir”: path to directory with input HDF files to be processed</p>
+  </li>
+  <li>
+    <p>“out.dir”: output directory</p>
+  </li>
+  <li>
+    <p>“prm.path”: path to parameter file. We’ll use the same parameter file as the 
+ one <a href="http://bit.ly/1lwoaAl">here</a>, but with line 10 ending in “.tif” instead of “.hdf”.</p>
+  </li>
+  <li>
+    <p>nbands: number of spectral bands in your HDF-EOS data. This argument controls 
+how the the output bands are aggregated into multi-band rasters. That means the “nbands” 
+value should be equal to the number of 1’s in the arg “SPECTRAL_SUBSET” of the 
+parameter file. Otherwise expect unexpected behaviour.</p>
+  </li>
+</ul>
+
+<p>And behold, the function:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno"> 1</span> hdf2mband <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>in.dir<span class="p">,</span> prm.path<span class="p">,</span> out.dir<span class="p">,</span> nbands<span class="p">){</span>
+<span class="lineno"> 2</span>   
+<span class="lineno"> 3</span>   INLIST <span class="o">&lt;-</span> <span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span>in.dir<span class="p">,</span> full.names<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno"> 4</span>   INNAMES<span class="o">&lt;-</span> <span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span>in.dir<span class="p">,</span> full.names<span class="o">=</span><span class="bp">F</span><span class="p">)</span>
+<span class="lineno"> 5</span>   
+<span class="lineno"> 6</span>   <span class="c1">#Manufacure output names with .tif extension</span>
+<span class="lineno"> 7</span>   OUTNAMES <span class="o">&lt;-</span> INNAMES
+<span class="lineno"> 8</span>   <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">length</span><span class="p">(</span>OUTNAMES<span class="p">)){</span>OUTNAMES<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span>pattern<span class="o">=</span><span class="s">&quot;.hdf&quot;</span><span class="p">,</span> x<span class="o">=</span>OUTNAMES<span class="p">[</span>i<span class="p">],</span> replacement<span class="o">=</span><span class="s">&quot;.tif&quot;</span><span class="p">)}</span>
+<span class="lineno"> 9</span>   
+<span class="lineno">10</span>     <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">length</span><span class="p">(</span>INLIST<span class="p">)){</span>
+<span class="lineno">11</span>       
+<span class="lineno">12</span>     <span class="c1">#Call mrt to subset and reproject from sinusoidal to geographic CRS</span>
+<span class="lineno">13</span>       <span class="kp">system</span><span class="p">(</span>
+<span class="lineno">14</span>         command<span class="o">=</span><span class="kp">paste</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;cd &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">15</span>                       
+<span class="lineno">16</span>           <span class="c1">#Write hdf file to text file</span>
+<span class="lineno">17</span>            <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;echo &quot;</span><span class="p">,</span> INLIST<span class="p">[</span>i<span class="p">],</span> <span class="s">&quot; &gt; &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaicinput.txt&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">18</span>                       
+<span class="lineno">19</span>           <span class="c1">#Run mrt mosaic and write output to hdf file</span>
+<span class="lineno">20</span>           <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;mrtmosaic -i &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaicinput.txt -o &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> 
+<span class="lineno">21</span>                 <span class="s">&quot;/mosaic_tmp.hdf&quot;</span><span class="p">,</span><span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">22</span>                       
+<span class="lineno">23</span>           <span class="c1">#Call resample </span>
+<span class="lineno">24</span>           <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;resample -p &quot;</span><span class="p">,</span> prm.path<span class="p">,</span> <span class="s">&quot; -i &quot;</span><span class="p">,</span> out.dir<span class="p">,</span> <span class="s">&quot;/mosaic_tmp.hdf -o &quot;</span><span class="p">,</span> 
+<span class="lineno">25</span>                 out.dir<span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> OUTNAMES<span class="p">[</span>i<span class="p">],</span> <span class="s">&quot;&amp;&amp;&quot;</span><span class="p">,</span>sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="lineno">26</span>                       
+<span class="lineno">27</span>           <span class="kp">paste</span><span class="p">(</span><span class="s">&quot;exit 0&quot;</span><span class="p">),</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span> intern<span class="o">=</span><span class="bp">T</span>
+<span class="lineno">28</span>         <span class="p">)</span>
+<span class="lineno">29</span>       <span class="kp">print</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span><span class="s">&quot;Done processing:&quot;</span><span class="p">,</span> INNAMES<span class="p">[</span>i<span class="p">]))</span>
+<span class="lineno">30</span>     <span class="p">}</span>
+<span class="lineno">31</span>   
+<span class="lineno">32</span>   <span class="c1">#Clean up working files</span>
+<span class="lineno">33</span>   <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/mosaic_tmp.hdf&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">34</span>   <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/mosaicinput.txt&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">35</span>   <span class="kp">file.remove</span><span class="p">(</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span><span class="s">&quot;/resample.log&quot;</span><span class="p">,</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+<span class="lineno">36</span>     
+<span class="lineno">37</span>   <span class="c1">#Aggregate single bands to multiband rasters</span>
+<span class="lineno">38</span>   band.paths <span class="o">&lt;-</span> <span class="kp">list.files</span><span class="p">(</span>path<span class="o">=</span>out.dir<span class="p">,</span> full.names<span class="o">=</span><span class="bp">T</span><span class="p">)</span>
+<span class="lineno">39</span>   
+<span class="lineno">40</span>       <span class="kr">repeat</span><span class="p">{</span>
+<span class="lineno">41</span>         
+<span class="lineno">42</span>        stack.i <span class="o">&lt;-</span> stack<span class="p">()</span>
+<span class="lineno">43</span>         
+<span class="lineno">44</span>       <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>nbands<span class="p">){</span>stack.i <span class="o">&lt;-</span> addLayer<span class="p">(</span>stack.i<span class="p">,</span> i<span class="o">=</span>read.ras<span class="p">(</span>x<span class="o">=</span>band.paths<span class="p">[</span>i<span class="p">]))}</span>
+<span class="lineno">45</span>         
+<span class="lineno">46</span>       writeRaster<span class="p">(</span>x<span class="o">=</span>stack.i<span class="p">,</span> filename<span class="o">=</span><span class="kp">paste</span><span class="p">(</span>out.dir<span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> 
+<span class="lineno">47</span>                   OUTNAMES<span class="p">[</span><span class="m">1</span><span class="p">],</span> sep<span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">),</span>  format<span class="o">=</span><span class="s">&quot;GTiff&quot;</span><span class="p">,</span> overwrite<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
+<span class="lineno">48</span>       <span class="kp">file.remove</span><span class="p">(</span>band.paths<span class="p">[</span><span class="m">1</span><span class="o">:</span>nbands<span class="p">])</span>
+<span class="lineno">49</span>         
+<span class="lineno">50</span>       <span class="c1">#Truncate done jobs</span>
+<span class="lineno">51</span>       band.paths <span class="o">&lt;-</span> band.paths<span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="m">1</span><span class="o">:</span>nbands<span class="p">)]</span>
+<span class="lineno">52</span>       OUTNAMES <span class="o">&lt;-</span> OUTNAMES<span class="p">[</span><span class="m">-1</span><span class="p">]</span>
+<span class="lineno">53</span>         
+<span class="lineno">54</span>       <span class="kr">if</span><span class="p">(</span><span class="kp">length</span><span class="p">(</span>band.paths<span class="p">)</span><span class="o">==</span><span class="m">0</span><span class="p">)</span>
+<span class="lineno">55</span>           <span class="kr">break</span>
+<span class="lineno">56</span>       <span class="p">}</span>
+<span class="lineno">57</span> <span class="p">}</span></code></pre></div>
+
+<p>Executing hdf2mband processes the input HDF-EOS dataset as per the settings in the 
+parameter file and arguments supplied to “hdf2mband”:</p>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> hdf2mband<span class="p">(</span>in.dir<span class="o">=</span>hdfin<span class="p">,</span> nbands<span class="o">=</span><span class="m">7</span><span class="p">,</span> prm.path<span class="o">=</span>prm.path<span class="p">,</span> out.dir<span class="o">=</span>out.dir<span class="p">)</span></code></pre></div>
+
+<hr />
+
+<h4 id="explore-result">Explore result</h4>
+
+<hr />
+<ul>
+  <li>Load sample output image in R</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> mb_ras <span class="o">&lt;-</span> stack<span class="p">(</span><span class="s">&quot;02_HDF_2_mband_geotiff/mband_out/MCD43A4.A2014177.tif&quot;</span><span class="p">)</span></code></pre></div>
+
+<ul>
+  <li>Check number of bands, In this example, they should be 7, remember?</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> nlayers<span class="p">(</span>mb_ras<span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">## [1] 7</code></pre></div>
+
+<ul>
+  <li>You can then plot the image, but first, you must define the no data fill value. For the MCD43A4 product, it is 32767 and you 
+can define this simply by:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> NAvalue<span class="p">(</span>mb_ras<span class="p">)</span> <span class="o">&lt;-</span> <span class="m">32767</span></code></pre></div>
+
+<ul>
+  <li>Then plot all bands:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-r" data-lang="r"><span class="lineno">1</span> plot<span class="p">(</span>mb_ras<span class="p">)</span></code></pre></div>
+
+<p><img src="/post_figures/2014-08-27-HDF_to_multi-band_geotiff/unnamed-chunk-10.png" alt="center" /> </p>
+
+<ul>
+  <li>Note that the final output is determined not only by the “hdf2mband” function args 
+but also by the settings of the parameter file used e.g. “hdf2mband.prm” here. You 
+can edit this to anything sensible to get multi-band GeoTIFFS in whatever projection, spatial or spectral extent you want.</li>
+</ul>
+
+<p>One way to visually validate the output would be to plot an RGB composite of one 
+of the output GeoTIFFs like the one above. How to do that will be the subject of 
+my next post =).</p>
+
+<hr />
+
+<h4 id="references">References</h4>
+
+<hr />
+<ul>
+  <li>
+    <p>R documentation on libraries used</p>
+  </li>
+  <li>
+    <p><a href="http://bit.ly/1wwLHWp">MODIS reprojection tool manual</a></p>
+  </li>
+  <li>
+    <p><a href="http://bit.ly/1zyo2RG">BASH documentation</a></p>
+  </li>
+</ul>

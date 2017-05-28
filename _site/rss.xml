@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+        <title>Spatialbit</title>
+        <description>Spatialbit - John Shekeine</description>
+        <link>https://shekeine.github.io</link>
+        <link>https://shekeine.github.io</link>
+        <lastBuildDate>2017-05-28T15:51:41+02:00</lastBuildDate>
+        <pubDate>2017-05-28T15:51:41+02:00</pubDate>
+        <ttl>1800</ttl>
+
+
+        <item>
+                <title>Ebolavirus: mapping the zoonotic niche</title>
+                <description>&lt;dropcaps&gt;F&lt;/dropcaps&gt;
+&lt;p&gt;ollowing the worst Ebola virus disease outbreak in history, researchers from 
+the University of Oxford have mapped the risk of Ebola virus zoonitic transmissions (from animal 
+vectors to humans) across the African continent (&lt;a href=&quot;http://goo.gl/iRlmZl&quot;&gt;original article here&lt;/a&gt;). The authors model data from the current epidemic 
+(as well as previous ones: 1976-2002) as a response to the &lt;a href=&quot;http://goo.gl/q8W95T&quot;&gt;following predictors:&lt;/a&gt; 
+elevation (&lt;a href=&quot;http://goo.gl/s5BBbd&quot;&gt;SRTM&lt;/a&gt;), vegetation (&lt;a href=&quot;http://goo.gl/ziGaZg&quot;&gt;MODIS EVI&lt;/a&gt;), land surface temperature 
+(&lt;a href=&quot;http://goo.gl/WjwUql&quot;&gt;MODIS LST&lt;/a&gt;), potential evapotranspiration and &lt;a href=&quot;http://www.gbif.org/&quot;&gt;species distribution data of bat vectors&lt;/a&gt;. 
+The resulting models were then used to predict the habitat suitability of Ebola virus vectors across Africa in affected and 
+“at-risk” countries.&lt;/p&gt;
+
+&lt;p&gt;Approximately, 22M people live within the predicted Ebola virus niche. Intuitively, the bigger 
+the confluence of this niche with human populations, the higher the risk of zoonitic transmissions. 
+The suitability of the part of this niche that overlaps with human populations (expressed as the probability of an EVD vector 
+(mostly fruit bats) occurring at a given location) is then used to estimate the populations at risk of Ebola outbreaks
+for each country. Most importantly, the suitability of the predicted niche (across space) reflects the relative probability 
+of zoonitic transmissions (see inset image).&lt;/p&gt;
+
+&lt;p&gt;Current Ebola transmission risk models address only zoonitic transmissions. The authors reckon that the next challenge 
+will be to incorporate cases of human-human transmissions to further inform the transmission risk models.&lt;/p&gt;
+</description>
+                <link>https://shekeine.github.io/2014/11/12/ebola_niche</link>
+                <guid>https://shekeine.github.io/2014/11/12/ebola_niche</guid>
+                <pubDate>2014-11-12T00:00:00+01:00</pubDate>
+        </item>
+
+        <item>
+                <title>Colour compositing satellite imagery in R</title>
+                <description>&lt;h4 id=&quot;introduction&quot;&gt;Introduction&lt;/h4&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;The general goal of this post is to illustrate how to:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Transform rasters to R friendly data structures e.g. a dataframe, while maintaining
+a coherent organization of the spectral and geolocational information.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Plot natural colour images (RGB) with the awesome R library: &lt;code&gt;ggplot2&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Generate pretty false colour composites in R, and illustrate their usefulness in remote sensing.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;####Tools and tutorial data&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;We’ll be using a Landsat 8 TM scene from 03/Feb/2014 of the Ngong hills region, Kenya. 
+This and other Landsat data can be freely obtained from the USGS repositories using 
+the &lt;a href=&quot;http://earthexplorer.usgs.gov/&quot;&gt;Earth Explorer&lt;/a&gt; data discovery tool.&lt;/p&gt;
+
+&lt;p&gt;For Landsat, I prefer to get the data via Earth Explorer rather than &lt;a href=&quot;http://1.usa.gov/ZLZOsr&quot;&gt;Reverb echo&lt;/a&gt; 
+because the former allows the user to filter available imagery by cloud cover, 
+which in turn means there is no need to get a bus load of images then sift through 
+to find the best one: &lt;a href=&quot;http://earthexplorer.usgs.gov/&quot;&gt;Earth Explorer&lt;/a&gt; can do that 
+for you on the fly during the data discovery process. The exact scene ID of the 
+image used here is: &lt;code&gt;LC81680612014034LGN00&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The data comes as a collection of GeoTIF files: one for each of Landsat 8’s 
+eleven bands; plus a quality band. To keep things neat, we move the files we need 
+(GeoTiffs for &lt;code&gt;Bands 1-7&lt;/code&gt; into a new empty folder). We then read all these rasters 
+into an R object of type “raster stack” as shown below. The newly created stack, 
+&lt;code&gt;raw_lt&lt;/code&gt;, is essentially a multi-band raster (with 7 bands) as &lt;code&gt;nlayers()&lt;/code&gt; reports.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Mosaic raw landsat tifs&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;raw_lt &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; stack&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;~/Grass/ngong_hills/landsat/LC81680612014034LGN00/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; pattern&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;TIF&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;nlayers&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;raw_lt&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Thereafter, we can reduce the image’s extent to our region of interest (ROI). To 
+do that, we first define an extent object to be used to crop it. The &lt;code&gt;coords&lt;/code&gt; argument 
+here defines the lower left and upper right corner of the new (cropped image).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Crop and mask to ROI&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;ext_lt &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; SpatialPointsDataFrame&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;coords&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;cbind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;36.5948&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;36.7500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1.4761&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1.3368&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;              data&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;id&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; proj4string&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;CRS&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;+init=epsg:4326&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Note that the coordinates supplied above are in the WGS84 coordinate system (CRS), 
+unlike the Landsat image to be cropped. We’ll tranform the CRS of the extent object 
+to match that of the image and then crop it:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;ext_lt &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; spTransform&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;ext_lt&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; CRS&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;crs&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;raw_lt&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;ngn &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; crop&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;raw_lt&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; extent&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;ext_lt&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#For archival and easy read access into R, write the new image to disk:&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;6 &lt;/span&gt;writeRaster&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;ngn&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; filename&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;03_SFCC_RGB/mb_ras.tif&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;GTiff&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; overwrite&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;####Natural colour (RGB) composite&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Read in multi-band raster&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;mb_ras &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; stack&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;03_SFCC_RGB/mb_ras.tif&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Scale to 0-255 range for display device&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;mb_ras &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; stretch&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_ras&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; minv&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; maxv&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Coerce raster into dataframe with coordinate columns for each pixel centre: for ggplot2&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;mb_df &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; raster&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;as.data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_ras&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; xy&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;mb_df &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; r&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;mb_ras.4&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; n&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;mb_ras.5&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; g&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;mb_ras.3&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; b&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;mb_ras.2&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;To plot a per-pixel RGB composite of the image, we’ll use R’s rgb() function. The 
+function ingests user defined intensities in the respective bands and composites 
+these to an output colour in the  sRGB colorspace. Note that all 3 (R, G, and B) 
+band intensities must be defined. Pixels with NA’s in one or more bands will cause rgb() to fail. 
+We can check whether we have any missing data by running:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;mb_df&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;complete.cases&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;p&quot;&gt;),]&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;#Returns zero rows, no pixel is lacking any data&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;span&gt;&lt;/span&gt;## [1] x y r n g b
+## &amp;lt;0 rows&amp;gt; (or 0-length row.names)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In case you are working with a product that has data gaps e.g. MODIS MCD43A4, you 
+would have to sieve out all incomplete rows from mb_df i.e., pixels with NA in any 
+of the bands which is doable with only a slight modification of the above code chunk.&lt;/p&gt;
+
+&lt;p&gt;Using R’s ggplot2 library, An RGB composite can then be plotted as follows:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;ggplot&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;data&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; aes&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; fill&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;rgb&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;r&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;g&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;b&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; maxColorValue &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;  coord_equal&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; theme_bw&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; geom_tile&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; scale_fill_identity&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;4 &lt;/span&gt;  scale_x_continuous&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;breaks&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.99&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; labels&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; expand &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5 &lt;/span&gt;  scale_y_continuous&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;breaks&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.99&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; labels&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; expand &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;6 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;7 &lt;/span&gt;  theme&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;panel.grid&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;element_blank&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; plot.title &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; element_text&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;8 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;9 &lt;/span&gt;  labs&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;title&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Landsat 8 TM derived RGB composite of Ngong Area, Kenya (UTM zone 37s)&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Lon&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Lat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-6-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;####False colour composite (FCC)&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;FCC’s are used to highlight particular components of the landscape e.g. certain minerals, 
+vegetation or water bodies.&lt;/p&gt;
+
+&lt;p&gt;False colour compositing in R is as you might guess, just a matter of modifying 
+how the relevant source image bands are mapped to the RGB channels of the display device.&lt;/p&gt;
+
+&lt;p&gt;As an example, we’ll do an RGB to NRG mapping when compositing the same image in 
+Figure 1. This results in the so called standard false colour composite (SFCC) where 
+vegetation features such as forests and other greenery are conspicously  depicted 
+in red, as opposed to green in true RGB compositing.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;ggplot&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;data&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mb_df&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; aes&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; fill&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;rgb&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;n&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;r&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;g&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; maxColorValue &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;  coord_equal&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; theme_bw&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; geom_tile&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; scale_fill_identity&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;  scale_x_continuous&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;breaks&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.99&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; labels&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;x&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; expand &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;  scale_y_continuous&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;breaks&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.99&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; labels&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_df&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;y&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; expand &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;  theme&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;panel.grid&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;element_blank&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; plot.title &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; element_text&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt; labs&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;title&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Landsat 8 TM derived SFCC of Ngong Area, (UTM 37s)&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;           x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Lon&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; y&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Lat&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-09-27-sfcc_rgb_in_R/unnamed-chunk-7-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;FCC can be extended further to highlight other landscape components. 
+Vegetation indices and spectral ratios for minerals such as iron oxides 
+may for example be mapped together in an RGB space to highlight the relative 
+distribution of each component within a landscape.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h4 id=&quot;references&quot;&gt;References&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Liu, Jian Guo, and Philippa J. Mason. Essential image processing and GIS for remote sensing. John Wiley &amp;amp; Sons, 2013.&lt;/li&gt;
+  &lt;li&gt;Wickham, Hadley. ggplot2: elegant graphics for data analysis. Springer, 2016.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+</description>
+                <link>https://shekeine.github.io/visualization/2014/09/27/sfcc_rgb_in_R</link>
+                <guid>https://shekeine.github.io/visualization/2014/09/27/sfcc_rgb_in_R</guid>
+                <pubDate>2014-09-27T00:00:00+02:00</pubDate>
+        </item>
+
+        <item>
+                <title>HDF-EOS to multi-band GeoTIFF in R</title>
+                <description>&lt;p&gt;####Why not just stick with HDF?&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;1- Band math and manipulation with HDF-EOS data in R is a pain in the ear. e.g.
+to read a specific band (e.g. band 1 from MODIS  &lt;a href=&quot;http://bit.ly/1uOoLwT&quot;&gt;MCD43A4&lt;/a&gt;) into R, one has to:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;bn1 &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;MOD_Grid_BRDF:Nadir_Reflectance_Band1&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;b01 &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; raster&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;readGDAL&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;HDF4_EOS:EOS_GRID:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;02_HDF_2_mband_geotiff/hdf_in /MCD43A4.A2001033.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; bn1&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt; silent&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Imagine the mess you would have if you had to do
+a lot of band math or manipulations with hyperspectral data. Besides, the reference
+to band ID’s by name (rather than index position) will have you pulling your hair 
+out if the input data changes to some other product with different band names.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;2- There are dedicated tools to work with HDF-EOS data formats..&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;However, if you are going to do your modelling and statistical anaylsis in R, 
+you might as well pre-process your data within R. Who wants to keep shuttling 
+between 10 different programs and twice as many folders between data preparation
+and results? Not me.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;So, we agree that it would be nice to have a &lt;b&gt;neat&lt;/b&gt; way to convert whole HDF-EOS 
+files as multi-band raster objects in R. My solution is to write an R function that 
+can stack all the dimensions of a &lt;i&gt;batch of input HDF-EOS&lt;/i&gt; into multi-band 
+GeoTIFFs for which R (and any other sensible data language or GIS) has excellent 
+support.&lt;/p&gt;
+
+&lt;p&gt;Just to get a feel of the data used in this post, we can plot the image band read in above and overlay 
+an outline of our region of interest (ROI) as follows:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Plot band 1 from MCD43A4.A2001033.hdf&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;par&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mar&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;plot&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;b01&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; axes&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Import Tsavo ROI shapefile&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;tsavo_diss &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; readShapePoly&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;fn&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;02_HDF_2_mband_geotiff/tsavo_park_diss.shp&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;                proj4string&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;CRS&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;+proj=longlat +datum=WGS84&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Transform Tsavo CRS to match b01&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;tsavo.sin &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; spTransform&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;tsavo_diss&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; CRSobj&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;b01&lt;span class=&quot;o&quot;&gt;@&lt;/span&gt;crs&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;11 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;12 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Overlay Tsavo ROI&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;13 &lt;/span&gt;plot&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;tsavo.sin&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; add&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; asp&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; lwd&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;14 &lt;/span&gt;title&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Figure 1: Tsavo ROI within MODIS HDF band 1&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; line&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-08-27-HDF_to_multi-band_geotiff/unnamed-chunk-2-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;###Tutorial data&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;p&gt;We’ll use the same HDF data as that &lt;a href=&quot;http://bit.ly/1ozvxl9&quot;&gt;in this post&lt;/a&gt;.
+Load the required libraries as shown below.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;raster&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;rgeos&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;maptools&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;maps&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;rgdal&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;###HDF-EOS to multi-band raster with R, SHELL and MODIS MRT&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Requirements:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;An R installation (obviously)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://bit.ly/1u4oG9W&quot;&gt;MODIS MRT installation&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A UNIX shell e.g. BASH. Windows users can install &amp;amp; run BASH using &lt;a href=&quot;https://www.cygwin.com/&quot;&gt;CYGWIN&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Next we write a function “hdf2mband” to do the work for us. It contains 4 args:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;“in.dir”: path to directory with input HDF files to be processed&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“out.dir”: output directory&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“prm.path”: path to parameter file. We’ll use the same parameter file as the 
+ one &lt;a href=&quot;http://bit.ly/1lwoaAl&quot;&gt;here&lt;/a&gt;, but with line 10 ending in “.tif” instead of “.hdf”.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;nbands: number of spectral bands in your HDF-EOS data. This argument controls 
+how the the output bands are aggregated into multi-band rasters. That means the “nbands” 
+value should be equal to the number of 1’s in the arg “SPECTRAL_SUBSET” of the 
+parameter file. Otherwise expect unexpected behaviour.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And behold, the function:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;hdf2mband &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; nbands&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;  INLIST &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;  INNAMES&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;#Manufacure output names with .tif extension&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;  OUTNAMES &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; INNAMES
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;  &lt;span class=&quot;kr&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;i &lt;span class=&quot;kr&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;OUTNAMES&lt;span class=&quot;p&quot;&gt;)){&lt;/span&gt;OUTNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;gsub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;pattern&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;OUTNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; replacement&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;.tif&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)}&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;    &lt;span class=&quot;kr&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;i &lt;span class=&quot;kr&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;INLIST&lt;span class=&quot;p&quot;&gt;)){&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;11 &lt;/span&gt;      
+&lt;span class=&quot;lineno&quot;&gt;12 &lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#Call mrt to subset and reproject from sinusoidal to geographic CRS&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;13 &lt;/span&gt;      &lt;span class=&quot;kp&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;14 &lt;/span&gt;        command&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;cd &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;15 &lt;/span&gt;                      
+&lt;span class=&quot;lineno&quot;&gt;16 &lt;/span&gt;          &lt;span class=&quot;c1&quot;&gt;#Write hdf file to text file&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;17 &lt;/span&gt;           &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;echo &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; INLIST&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot; &amp;gt; &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;18 &lt;/span&gt;                      
+&lt;span class=&quot;lineno&quot;&gt;19 &lt;/span&gt;          &lt;span class=&quot;c1&quot;&gt;#Run mrt mosaic and write output to hdf file&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;20 &lt;/span&gt;          &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;mrtmosaic -i &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt -o &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;21 &lt;/span&gt;                &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;22 &lt;/span&gt;                      
+&lt;span class=&quot;lineno&quot;&gt;23 &lt;/span&gt;          &lt;span class=&quot;c1&quot;&gt;#Call resample &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;24 &lt;/span&gt;          &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;resample -p &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot; -i &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf -o &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;25 &lt;/span&gt;                out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; OUTNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;26 &lt;/span&gt;                      
+&lt;span class=&quot;lineno&quot;&gt;27 &lt;/span&gt;          &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;exit 0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; intern&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;28 &lt;/span&gt;        &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;29 &lt;/span&gt;      &lt;span class=&quot;kp&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Done processing:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; INNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;]))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;30 &lt;/span&gt;    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;31 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;32 &lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;#Clean up working files&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;33 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;34 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;35 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/resample.log&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;36 &lt;/span&gt;    
+&lt;span class=&quot;lineno&quot;&gt;37 &lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;#Aggregate single bands to multiband rasters&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;38 &lt;/span&gt;  band.paths &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;39 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;40 &lt;/span&gt;      &lt;span class=&quot;kr&quot;&gt;repeat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;41 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;42 &lt;/span&gt;       stack.i &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; stack&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;43 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;44 &lt;/span&gt;      &lt;span class=&quot;kr&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;i &lt;span class=&quot;kr&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;nbands&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;stack.i &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; addLayer&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;stack.i&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; i&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;read.ras&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;band.paths&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;]))}&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;45 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;46 &lt;/span&gt;      writeRaster&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;x&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;stack.i&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; filename&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;47 &lt;/span&gt;                  OUTNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;  format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;GTiff&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; overwrite&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;48 &lt;/span&gt;      &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;band.paths&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;nbands&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;49 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;50 &lt;/span&gt;      &lt;span class=&quot;c1&quot;&gt;#Truncate done jobs&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;51 &lt;/span&gt;      band.paths &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; band.paths&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;nbands&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;52 &lt;/span&gt;      OUTNAMES &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; OUTNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;53 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;54 &lt;/span&gt;      &lt;span class=&quot;kr&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;band.paths&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;55 &lt;/span&gt;          &lt;span class=&quot;kr&quot;&gt;break&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;56 &lt;/span&gt;      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;57 &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Executing hdf2mband processes the input HDF-EOS dataset as per the settings in the 
+parameter file and arguments supplied to “hdf2mband”:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;hdf2mband&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;in.dir&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;hdfin&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; nbands&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;prm.path&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;hr /&gt;
+
+&lt;h4 id=&quot;explore-result&quot;&gt;Explore result&lt;/h4&gt;
+
+&lt;hr /&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Load sample output image in R&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;mb_ras &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; stack&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;02_HDF_2_mband_geotiff/mband_out/MCD43A4.A2014177.tif&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Check number of bands, In this example, they should be 7, remember?&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5 &lt;/span&gt;nlayers&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_ras&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;span&gt;&lt;/span&gt;## [1] 7&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;#Define the no data fill value for the MCD43A4 product: 32767, then plot all bands&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;NAvalue&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_ras&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;32767&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;plot&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;mb_ras&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-08-27-HDF_to_multi-band_geotiff/unnamed-chunk-7-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Note that the final output is determined not only by the “hdf2mband” function args 
+but also by the settings of the parameter file used e.g. “hdf2mband.prm” here. You 
+can edit this to anything sensible to get multi-band GeoTIFFS in whatever projection, spatial or spectral extent you want.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;One way to visually validate the output would be to plot an RGB composite of one 
+of the output GeoTIFFs like the one above. How to do that will be the subject of 
+my next post =).&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h4 id=&quot;references&quot;&gt;References&lt;/h4&gt;
+
+&lt;hr /&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;R documentation on libraries used&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://bit.ly/1wwLHWp&quot;&gt;MODIS reprojection tool manual&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://bit.ly/1zyo2RG&quot;&gt;BASH documentation&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://shekeine.github.io/modis/2014/08/27/HDF_to_multi-band_geotiff</link>
+                <guid>https://shekeine.github.io/modis/2014/08/27/HDF_to_multi-band_geotiff</guid>
+                <pubDate>2014-08-27T00:00:00+02:00</pubDate>
+        </item>
+
+        <item>
+                <title>Batch processing MODIS HDF-EOS in R</title>
+                <description>&lt;p&gt;####First, why bother with:&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;p&gt;1- Reprojections?&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;So that we can integrate MODIS data with other spatial data that’s in more 
+common CRS. In this tutorial, we’ll reproject MCD43A4 HDF data to the geographic
+CRS based on the WGS84 datum.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;2- Spatial subsetting?&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Our region of interest (ROI) i.e. Tsavo national park is much smaller than the
+tile it falls in i.e. tile h21v09. We’ll thus clip our MCD43A4 HDF files to the 
+park’s extent. Below is an outline of our ROI within a sample MCD43A4 image (band 1).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-08-25-MODIS_HDF_reprojection_subsetting_R/unnamed-chunk-1-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;3- Spectral subsetting?&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;From MCD43A4’s 7 bands, we’ll extract bands 1 (Red), 4 (Green), 3 (Blue) and 2
+(NIR). This set of bands can be used for &lt;a href=&quot;http://goo.gl/nqJPWO&quot;&gt;RGB&lt;/a&gt; &amp;amp; &lt;a href=&quot;http://goo.gl/vvZtMs&quot;&gt;SFCC&lt;/a&gt; image compositing as well as in the calculation of vegetation indices.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Subsetting your data &lt;strong&gt;to retain only what you need&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;saves storage space&lt;/li&gt;
+  &lt;li&gt;amount of computational resources needed for subsequent processing &amp;amp; analysis.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;###Tutorial data&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;p&gt;The demonstration dataset was obtained from NASA’s &lt;a href=&quot;https://earthdata.nasa.gov/&quot;&gt;EOSDIS&lt;/a&gt; 
+through &lt;a href=&quot;http://goo.gl/rBCFKr&quot;&gt;Reverb Echo&lt;/a&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Product: MODIS BRDF adjusted surface reflectance &lt;a href=&quot;http://bit.ly/1uOoLwT&quot;&gt;MCD43A4&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Temporal coverage: 2001-2014. Note that MCD43A4 is produced using the “Phased 
+production strategy”. This means that you get 46 images per year with a “running”
+8 day overlap so you might want to isolate one 16 day stream from the collection,
+especially if you will be using the data in the form of a time series.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Spatial coverage: MODIS tile h21v09&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The data can be explored as follows.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Load required spatial data libraries.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;raster&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;rgeos&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;3 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;maptools&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;maps&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5 &lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;rgdal&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Read sample band from a sample hdf into a raster object in R as shown below.&lt;/li&gt;
+  &lt;li&gt;Note that plotting “b01” below yields Figure 1.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;bn1 &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;MOD_Grid_BRDF:Nadir_Reflectance_Band1&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2 &lt;/span&gt;b01 &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; raster&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;readGDAL&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;HDF4_EOS:EOS_GRID:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;01_MCD_R_Shell_MRT/MCD43A4.A2005113.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; bn1&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;silent&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Checking current projection&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;b01&lt;span class=&quot;o&quot;&gt;@&lt;/span&gt;crs&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;span&gt;&lt;/span&gt;## CRS arguments:
+##  +proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181
+## +units=m +no_defs&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Checking current spatial extent&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;extent&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;b01&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;span&gt;&lt;/span&gt;## class       : Extent 
+## xmin        : 3335852 
+## xmax        : 4447802 
+## ymin        : -1111951 
+## ymax        : 0&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;###Batch reprojecting MODIS HDF-EOS with R, SHELL and MODIS MRT&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Requirements:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;An R installation (obviously)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;MODIS MRT tool installation&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A UNIX shell e.g. BASH. Windows users can install &amp;amp; run BASH using &lt;a href=&quot;https://www.cygwin.com/&quot;&gt;CYGWIN&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Next we write a function “fun_mrt” to do tasks 1-3 above. It contains 3 args:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;“in.dir”: path to directory with input HDF files to be processed&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“out.dir”: output directory&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“prm.path”: path to parameter file that contains the processing parameters e.g.
+ Here is what my parameter file, “mcd43a4.prm”, looks like:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;INPUT_FILENAME &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;home&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;shekeine&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;Projects&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;data&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;MCD43A4_h21v09&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;hdf&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;MCD43A4.A2000177.hdf
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;SPECTRAL_SUBSET &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;SPATIAL_SUBSET_TYPE &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; INPUT_LAT_LONG
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;SPATIAL_SUBSET_UL_CORNER &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;-1.8&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;37.6&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;SPATIAL_SUBSET_LR_CORNER &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;-4.3&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;39.5&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;OUTPUT_FILENAME &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;home&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;shekeine&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;Projects&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;data&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;MCD43A4_tsavo&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;sample.hdf
+&lt;span class=&quot;lineno&quot;&gt;11 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;12 &lt;/span&gt;RESAMPLING_TYPE &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; NEAREST_NEIGHBOR
+&lt;span class=&quot;lineno&quot;&gt;13 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;14 &lt;/span&gt;OUTPUT_PROJECTION_TYPE &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; GEO
+&lt;span class=&quot;lineno&quot;&gt;15 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;16 &lt;/span&gt;OUTPUT_PROJECTION_PARAMETERS &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;17 &lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;18 &lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;19 &lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;20 &lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;21 &lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;22 &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;23 &lt;/span&gt;DATUM &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; WGS84&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And behold, the function:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt; 1 &lt;/span&gt;fun_mrt &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 2 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 3 &lt;/span&gt;  INLIST &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 4 &lt;/span&gt;  INNAMES&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;list.files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;in.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; full.names&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 5 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt; 6 &lt;/span&gt;  &lt;span class=&quot;kr&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;i &lt;span class=&quot;kr&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;INLIST&lt;span class=&quot;p&quot;&gt;)){&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 7 &lt;/span&gt;    
+&lt;span class=&quot;lineno&quot;&gt; 8 &lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#Call to sh and mrt to subset, reproject from sin to epsg 4326 and rewrite all hdf&amp;#39;s&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 9 &lt;/span&gt;   &lt;span class=&quot;kp&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;10 &lt;/span&gt;    command&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;cd &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;11 &lt;/span&gt;          
+&lt;span class=&quot;lineno&quot;&gt;12 &lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#Write hdf file to text file&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;13 &lt;/span&gt;    &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;echo &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; INLIST&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot; &amp;gt; &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;14 &lt;/span&gt;        
+&lt;span class=&quot;lineno&quot;&gt;15 &lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#Run mrt mosaic and write output to HDF file&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;16 &lt;/span&gt;    &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;mrtmosaic -i &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt -o &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;17 &lt;/span&gt;          
+&lt;span class=&quot;lineno&quot;&gt;18 &lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#Call resample &lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;19 &lt;/span&gt;    &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;resample -p &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot; -i &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf -o &amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; INNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;amp;&amp;amp;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;20 &lt;/span&gt;      
+&lt;span class=&quot;lineno&quot;&gt;21 &lt;/span&gt;    &lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;exit 0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; intern&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;22 &lt;/span&gt;   
+&lt;span class=&quot;lineno&quot;&gt;23 &lt;/span&gt;   &lt;span class=&quot;kp&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Done processing:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; INNAMES&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;i&lt;span class=&quot;p&quot;&gt;]))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;24 &lt;/span&gt;   
+&lt;span class=&quot;lineno&quot;&gt;25 &lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;26 &lt;/span&gt;  
+&lt;span class=&quot;lineno&quot;&gt;27 &lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;#Clean up working files&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;28 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaic_tmp.hdf&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;29 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/mosaicinput.txt&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;30 &lt;/span&gt;  &lt;span class=&quot;kp&quot;&gt;file.remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;paste&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;out.dir&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/resample.log&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; sep&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;31 &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Executing fun_mrt on our HDF dataset processes it as per the settings in the parameter file.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;span class=&quot;lineno&quot;&gt;1 &lt;/span&gt;fun_mrt&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;in.dir&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/home/in&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; prm.path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/home/mcd43a4.prm&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; out.dir&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/home/out&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;hr /&gt;
+
+&lt;h4 id=&quot;explore-result&quot;&gt;Explore result&lt;/h4&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_figures/2014-08-25-MODIS_HDF_reprojection_subsetting_R/unnamed-chunk-9-1.png&quot; alt=&quot;center&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;The data is now reprojected to the geographic CRS (EPSG=4326) and spatially 
+subset to the region defined in the parameter file.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Spatial subsets done by “fun_mrt” can only be defined and implemented
+with square/rectangular ROI’s. If necessary, it is possible to clip the boundaries of the images to 
+match those of the ROI even more closely using the &lt;code&gt;mask()&lt;/code&gt; function in R.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h4 id=&quot;references&quot;&gt;References&lt;/h4&gt;
+
+&lt;hr /&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;R documentation on libraries used&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://bit.ly/1wwLHWp&quot;&gt;MODIS reprojection tool manual&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://bit.ly/1zyo2RG&quot;&gt;BASH documentation&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://shekeine.github.io/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R</link>
+                <guid>https://shekeine.github.io/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R</guid>
+                <pubDate>2014-08-25T00:00:00+02:00</pubDate>
+        </item>
+
+
+</channel>
+</rss>

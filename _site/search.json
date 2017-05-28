@@ -1,0 +1,47 @@
+[
+    
+    {
+      "title"    : "Ebolavirus: mapping the zoonotic niche",
+      "href"     : "/2014/11/12/ebola_niche",
+      "date"     : {
+         "day"   : "12",
+         "month" : "November",
+         "year"  : "2014"
+      }
+    }
+    ,
+    
+    {
+      "title"    : "Colour compositing satellite imagery in R",
+      "href"     : "/visualization/2014/09/27/sfcc_rgb_in_R",
+      "date"     : {
+         "day"   : "27",
+         "month" : "September",
+         "year"  : "2014"
+      }
+    }
+    ,
+    
+    {
+      "title"    : "HDF-EOS to multi-band GeoTIFF in R",
+      "href"     : "/modis/2014/08/27/HDF_to_multi-band_geotiff",
+      "date"     : {
+         "day"   : "27",
+         "month" : "August",
+         "year"  : "2014"
+      }
+    }
+    ,
+    
+    {
+      "title"    : "Batch processing MODIS HDF-EOS in R",
+      "href"     : "/modis/2014/08/25/MODIS_HDF_reprojection_subsetting_R",
+      "date"     : {
+         "day"   : "25",
+         "month" : "August",
+         "year"  : "2014"
+      }
+    }
+    
+    
+] 
